@@ -268,8 +268,9 @@ select {
   justify-self: end;
   display: grid;
   grid-template-columns: repeat(2, 72px);
+  grid-template-rows: 34px 88px;
   align-items: end;
-  gap: 16px;
+  gap: 8px 16px;
 }
 
 .round-control {
@@ -289,12 +290,30 @@ select {
   touch-action: none;
 }
 
+.turbo-control {
+  width: 72px;
+  height: 30px;
+  min-height: 30px;
+  border: 0;
+  border-radius: 999px;
+  background: #343b46;
+  color: #eef2f7;
+  font-size: 0.72rem;
+  font-weight: 900;
+  box-shadow:
+    inset 0 3px 0 rgba(255, 255, 255, 0.12),
+    inset 0 -4px 0 rgba(0, 0, 0, 0.28),
+    0 3px 0 #20252e;
+  touch-action: none;
+}
+
 .b-button {
   transform: translateY(16px);
 }
 
 .round-control.is-pressed,
-.small-control.is-pressed {
+.small-control.is-pressed,
+.turbo-control.is-pressed {
   transform: translateY(4px);
 }
 
@@ -359,13 +378,19 @@ select {
 
   .face-buttons {
     grid-template-columns: repeat(2, minmax(58px, 66px));
-    gap: 10px;
+    grid-template-rows: 32px 82px;
+    gap: 7px 10px;
   }
 
   .round-control {
     width: clamp(58px, 18vw, 66px);
     height: clamp(58px, 18vw, 66px);
     min-height: clamp(58px, 18vw, 66px);
+  }
+
+  .turbo-control {
+    width: clamp(58px, 18vw, 66px);
+    font-size: 0.68rem;
   }
 }
 
@@ -397,7 +422,8 @@ select {
 
   .face-buttons {
     grid-template-columns: repeat(2, 54px);
-    gap: 8px;
+    grid-template-rows: 30px 72px;
+    gap: 6px 8px;
   }
 
   .round-control {
@@ -405,5 +431,12 @@ select {
     height: 54px;
     min-height: 54px;
     font-size: 1.2rem;
+  }
+
+  .turbo-control {
+    width: 54px;
+    height: 28px;
+    min-height: 28px;
+    font-size: 0.62rem;
   }
 }

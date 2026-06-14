@@ -38,6 +38,8 @@ app.innerHTML = `
       </div>
 
       <div class="face-buttons" aria-label="Action buttons">
+        <button class="turbo-control" data-button="turbo-b" type="button">Turbo B</button>
+        <button class="turbo-control" data-button="turbo-a" type="button">Turbo A</button>
         <button class="round-control b-button" data-button="b" type="button">B</button>
         <button class="round-control a-button" data-button="a" type="button">A</button>
       </div>
@@ -55,6 +57,8 @@ const dpadEl = document.querySelector("#dpad");
 const buttonMap = {
   a: Controller.BUTTON_A,
   b: Controller.BUTTON_B,
+  "turbo-a": Controller.BUTTON_TURBO_A,
+  "turbo-b": Controller.BUTTON_TURBO_B,
   select: Controller.BUTTON_SELECT,
   start: Controller.BUTTON_START,
 };
