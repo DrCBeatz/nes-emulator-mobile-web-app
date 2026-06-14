@@ -2,6 +2,8 @@
 
 A mobile-friendly 8-bit emulator web app powered by [JSNES](https://github.com/bfirsh/jsnes). The current app targets NES hardware, runs fully in the browser, opens local `.nes` files without uploading them anywhere, includes touch controls modeled after the original NES controller, and can be deployed as a static website.
 
+Live site: [https://8bitpocket.app](https://8bitpocket.app)
+
 ## Features
 
 - Browser-based NES hardware emulation with JSNES
