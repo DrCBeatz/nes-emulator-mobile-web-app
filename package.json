@@ -1,0 +1,33 @@
+{
+  "name": "nes-emulator-mobile-web-app",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A mobile-friendly 8-bit emulator web app powered by JSNES.",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DrCBeatz/nes-emulator-mobile-web-app.git"
+  },
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "vite build",
+    "preview": "vite preview --host 0.0.0.0"
+  },
+  "keywords": [
+    "nes",
+    "emulator",
+    "jsnes",
+    "mobile",
+    "static-site"
+  ],
+  "author": "DrCBeatz",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/DrCBeatz/nes-emulator-mobile-web-app/issues"
+  },
+  "homepage": "https://github.com/DrCBeatz/nes-emulator-mobile-web-app#readme",
+  "dependencies": {
+    "jsnes": "^2.1.0",
+    "vite": "8.0.16"
+  }
+}

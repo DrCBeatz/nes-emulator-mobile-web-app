@@ -1,0 +1,10 @@
+.DS_Store
+node_modules/
+dist/
+
+# Local ROM/test artifacts. Keep game files out of git.
+*.nes
+*.zip
+*.fds
+*.unf
+*.unif
