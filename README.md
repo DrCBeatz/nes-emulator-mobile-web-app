@@ -1,33 +1,43 @@
 # 8-Bit Pocket
 
-A mobile-friendly 8-bit emulator web app powered by [JSNES](https://github.com/bfirsh/jsnes). The current app targets NES hardware, runs fully in the browser, opens local `.nes` files without uploading them anywhere, includes touch controls modeled after the original NES controller, and can be deployed as a static website.
+A mobile-first NES emulator web app powered by [JSNES](https://github.com/bfirsh/jsnes). It runs fully in the browser, opens local `.nes` files without uploading them anywhere, and is deployed as a static site on AWS.
 
 Live site: [https://8bitpocket.app](https://8bitpocket.app)
 
 ## Features
 
 - Browser-based NES hardware emulation with JSNES
-- Mobile touch controls for D-pad, A, B, Select, and Start
 - Local ROM loading from the user's device
-- Optional hosted ROM list via `public/roms/manifest.json`
-- Static build output suitable for S3, CloudFront, GitHub Pages, Netlify, or similar hosting
+- Optional hosted ROM picker via `public/roms/manifest.json`
+- Touch controls modeled after an NES controller
+- Turbo A and Turbo B controls for casual mobile play
+- Authentic mono audio mix, matching the original NES output
+- Runtime audio sample-rate sync for desktop/mobile browser audio devices
+- Mobile Safari UX hardening:
+  - reduced accidental double-tap zoom
+  - disabled text selection and touch callouts
+  - controller controls kept inside the controller shell in portrait and landscape
+- Static hosting with S3, CloudFront, ACM, Route 53, and GitHub Actions CI/CD
+
+## Architecture
+
+```txt
+Vite static app
+  -> JSNES browser emulator
+  -> local ROM file reader / hosted ROM manifest
+  -> S3 private static origin
+  -> CloudFront HTTPS distribution
+  -> Route 53 custom domain
+  -> GitHub Actions build, deploy, and CloudFront invalidation
+```
+
+The app has no backend. User-selected ROM files are read locally by the browser and are not sent to the server.
 
 ## ROMs
 
 This repository does not include game ROMs. Use public-domain, homebrew, or otherwise legally licensed ROM files.
 
 Local test ROMs are ignored by git through `.gitignore`.
-
-## Development
-
-```sh
-npm install
-npm run dev
-```
-
-Open the local URL shown by Vite, then use **Open ROM** to load a `.nes` file from your device.
-
-## Hosted ROMs
 
 To provide a hosted ROM picker, place licensed ROM files in `public/roms/` and list them in `public/roms/manifest.json`:
 
@@ -42,6 +52,21 @@ To provide a hosted ROM picker, place licensed ROM files in `public/roms/` and l
 
 ROM files are ignored by default, so remove or narrow the ROM ignore rules only if you intentionally want to commit legally redistributable ROMs.
 
+## Known Limitations
+
+8-Bit Pocket uses JSNES directly rather than a heavier accuracy-focused emulator core. Many games run well, but some ROMs may show sprite rendering artifacts or other compatibility issues. The goal of this project is a lightweight, mobile-friendly static web emulator for casual play, not cycle-perfect NES emulation.
+
+iOS Safari audio can be picky about user gestures and device audio settings. The app includes an `AudioContext` compatibility fallback and resumes suspended audio on controller input, but some device/browser combinations may still require checking silent mode, volume, or page reload state.
+
+## Development
+
+```sh
+npm install
+npm run dev
+```
+
+Open the local URL shown by Vite, then use **Open ROM** to load a `.nes` file from your device.
+
 ## Build
 
 ```sh
@@ -50,11 +75,13 @@ npm run build
 
 The static site is generated in `dist/`.
 
-## S3 Deploy
+## Manual S3 Deploy
 
 ```sh
 aws s3 sync dist s3://nes-emulator-mobile-web-app --delete --exclude ".DS_Store" --exclude "*/.DS_Store"
 ```
+
+The normal deployment path is GitHub Actions on pushes to `main`.
 
 ## HTTPS Domain Infrastructure
 
