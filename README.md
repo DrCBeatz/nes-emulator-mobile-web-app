@@ -35,22 +35,27 @@ The app has no backend. User-selected ROM files are read locally by the browser 
 
 ## ROMs
 
-This repository does not include game ROMs. Use public-domain, homebrew, or otherwise legally licensed ROM files.
+This repository includes one redistributable homebrew demo ROM, **Melo-Jellos 2**, for the hosted ROM picker. It is licensed separately from the app under CC-BY-SA 4.0. See `THIRD_PARTY_ROMS.md` for attribution, source, license, and checksum details.
+
+For any other games, use public-domain, homebrew, or otherwise legally licensed ROM files.
 
 Local test ROMs are ignored by git through `.gitignore`.
 
-To provide a hosted ROM picker, place licensed ROM files in `public/roms/` and list them in `public/roms/manifest.json`:
+To provide additional hosted ROMs, place licensed ROM files in `public/roms/` and list them in `public/roms/manifest.json`:
 
 ```json
 [
   {
     "title": "Example Homebrew",
-    "url": "/roms/example.nes"
+    "url": "/roms/example.nes",
+    "author": "Example Author",
+    "license": "Example License",
+    "source": "https://example.com"
   }
 ]
 ```
 
-ROM files are ignored by default, so remove or narrow the ROM ignore rules only if you intentionally want to commit legally redistributable ROMs.
+ROM files are ignored by default. Add narrow `.gitignore` exceptions only for ROMs that you intentionally want to commit and are confident you can redistribute.
 
 ## Known Limitations
 
@@ -132,3 +137,5 @@ If serving directly from an S3 website endpoint without CloudFront, the bucket n
 ## License
 
 MIT
+
+Third-party ROM content is licensed separately. See `THIRD_PARTY_ROMS.md`.

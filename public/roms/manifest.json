@@ -1,6 +1,11 @@
 [
   {
-    "title": "Add licensed ROMs to public/roms and list them here",
-    "url": ""
+    "title": "Melo-Jellos 2",
+    "url": "/roms/melo-jellos-2.nes",
+    "author": "Adrian Makes Games",
+    "contributors": ["ptoing", "SoundSync5000"],
+    "license": "CC-BY-SA 4.0",
+    "source": "https://nes-open-db.github.io/roms/melojellos2/",
+    "sha1": "699f27acff372cf2f8506b4fccd18566d693bace"
   }
 ]
