@@ -1,0 +1,52 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  AWS_REGION: us-east-2
+  S3_BUCKET: nes-emulator-mobile-web-app
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Check deployment variables
+        run: |
+          test -n "${{ vars.AWS_ROLE_ARN }}" || (echo "Missing repository variable AWS_ROLE_ARN" && exit 1)
+          test -n "${{ vars.CLOUDFRONT_DISTRIBUTION_ID }}" || (echo "Missing repository variable CLOUDFRONT_DISTRIBUTION_ID" && exit 1)
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v5
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Sync site to S3
+        run: aws s3 sync dist "s3://${S3_BUCKET}" --delete --exclude ".DS_Store" --exclude "*/.DS_Store"
+
+      - name: Invalidate CloudFront
+        run: aws cloudfront create-invalidation --distribution-id "${{ vars.CLOUDFRONT_DISTRIBUTION_ID }}" --paths "/*"

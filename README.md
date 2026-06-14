@@ -51,10 +51,39 @@ The static site is generated in `dist/`.
 ## S3 Deploy
 
 ```sh
-aws s3 sync dist s3://nes-emulator-mobile-web-app --delete
+aws s3 sync dist s3://nes-emulator-mobile-web-app --delete --exclude ".DS_Store" --exclude "*/.DS_Store"
 ```
 
-For a public S3 website bucket, the bucket needs public object read access:
+## HTTPS Domain Infrastructure
+
+The `infrastructure/cloudformation.yml` template creates:
+
+- ACM certificate for `8bitpocket.app` and `www.8bitpocket.app`
+- CloudFront distribution with HTTPS redirects
+- Route 53 `A` and `AAAA` alias records
+- S3 bucket policy that allows CloudFront Origin Access Control to read site files
+- GitHub Actions OIDC role for deployment
+
+Deploy the stack in `us-east-1`, which is required for CloudFront ACM certificates:
+
+```sh
+aws cloudformation deploy \
+  --region us-east-1 \
+  --stack-name eightbit-pocket-web \
+  --template-file infrastructure/cloudformation.yml \
+  --capabilities CAPABILITY_IAM
+```
+
+After the stack is created, add these GitHub repository variables:
+
+- `AWS_ROLE_ARN`: stack output `GitHubActionsRoleArn`
+- `CLOUDFRONT_DISTRIBUTION_ID`: stack output `CloudFrontDistributionId`
+
+The deploy workflow builds the app, syncs `dist/` to S3, and invalidates CloudFront on pushes to `main`.
+
+## Public S3 Website Fallback
+
+If serving directly from an S3 website endpoint without CloudFront, the bucket needs public object read access:
 
 ```json
 {
