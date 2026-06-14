@@ -75,8 +75,16 @@ function setStatus(message, tone = "normal") {
   statusEl.dataset.tone = tone;
 }
 
+function installAudioContextFallback() {
+  if (!window.AudioContext && window.webkitAudioContext) {
+    window.AudioContext = window.webkitAudioContext;
+  }
+}
+
 function ensureEmulator() {
   if (emulator) return emulator;
+
+  installAudioContextFallback();
 
   emulator = new Browser({
     container: screenEl,
@@ -90,6 +98,13 @@ function ensureEmulator() {
   window.addEventListener("resize", () => emulator?.fitInParent());
   pauseButton.disabled = false;
   return emulator;
+}
+
+function resumeAudioContext() {
+  const audioContext = emulator?._speakers?.audioCtx;
+  if (audioContext?.state === "suspended") {
+    audioContext.resume().catch(() => {});
+  }
 }
 
 function bytesToBinaryString(buffer) {
@@ -259,6 +274,7 @@ function updateDpadVisualState() {
 function bindMomentaryButton(buttonEl, button) {
   buttonEl.addEventListener("pointerdown", (event) => {
     event.preventDefault();
+    resumeAudioContext();
     buttonEl.setPointerCapture(event.pointerId);
     pressButton(button);
     buttonEl.classList.add("is-pressed");
@@ -280,6 +296,7 @@ function bindMomentaryButton(buttonEl, button) {
 
 dpadEl.addEventListener("pointerdown", (event) => {
   event.preventDefault();
+  resumeAudioContext();
   dpadEl.setPointerCapture(event.pointerId);
   setDpadButtons(event.pointerId, buttonsFromDpadPointer(event));
 });
@@ -339,5 +356,23 @@ pauseButton.addEventListener("click", () => {
 document.addEventListener("visibilitychange", () => {
   if (document.hidden) releaseAllButtons();
 });
+
+document.addEventListener("selectstart", (event) => event.preventDefault());
+document.addEventListener("dblclick", (event) => event.preventDefault(), {
+  passive: false,
+});
+
+let lastTouchEndAt = 0;
+document.addEventListener(
+  "touchend",
+  (event) => {
+    const now = Date.now();
+    if (now - lastTouchEndAt < 350) {
+      event.preventDefault();
+    }
+    lastTouchEndAt = now;
+  },
+  { passive: false },
+);
 
 loadHostedRomManifest();

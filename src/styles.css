@@ -24,6 +24,11 @@ html,
 body,
 #app {
   min-height: 100%;
+  overscroll-behavior: none;
+  -webkit-text-size-adjust: 100%;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 body {
@@ -33,6 +38,7 @@ body {
     linear-gradient(145deg, #0f1115 0%, #171b22 52%, #101217 100%);
   color: var(--ink);
   overflow-x: hidden;
+  touch-action: manipulation;
 }
 
 button,
@@ -54,6 +60,7 @@ select {
 button,
 .file-button {
   cursor: pointer;
+  touch-action: manipulation;
 }
 
 button:disabled,
@@ -183,22 +190,27 @@ select {
 }
 
 .controller {
-  min-height: 158px;
+  --dpad-size: clamp(132px, 24vw, 176px);
+  --round-size: 72px;
+  --turbo-width: 72px;
+  --turbo-height: 30px;
+  min-height: 174px;
   display: grid;
-  grid-template-columns: minmax(132px, 0.8fr) minmax(130px, 0.65fr) minmax(142px, 0.8fr);
+  grid-template-columns: minmax(var(--dpad-size), 0.85fr) minmax(130px, 0.65fr) minmax(160px, 0.8fr);
   align-items: center;
   gap: 14px;
-  padding: 16px;
+  padding: 16px 20px 24px;
   border-radius: 8px;
   background: linear-gradient(180deg, #d9dde5 0%, #b8bec9 100%);
   box-shadow: var(--shadow);
   touch-action: none;
+  -webkit-user-select: none;
   user-select: none;
 }
 
 .dpad {
   justify-self: start;
-  width: clamp(132px, 24vw, 176px);
+  width: var(--dpad-size);
   aspect-ratio: 1;
   position: relative;
   border-radius: 50%;
@@ -267,16 +279,16 @@ select {
 .face-buttons {
   justify-self: end;
   display: grid;
-  grid-template-columns: repeat(2, 72px);
-  grid-template-rows: 34px 88px;
+  grid-template-columns: repeat(2, var(--round-size));
+  grid-template-rows: var(--turbo-height) calc(var(--round-size) + 18px);
   align-items: end;
   gap: 8px 16px;
 }
 
 .round-control {
-  width: 72px;
-  height: 72px;
-  min-height: 72px;
+  width: var(--round-size);
+  height: var(--round-size);
+  min-height: var(--round-size);
   border: 0;
   border-radius: 50%;
   background: radial-gradient(circle at 34% 26%, #ff8590, var(--red) 54%, var(--red-dark));
@@ -291,9 +303,9 @@ select {
 }
 
 .turbo-control {
-  width: 72px;
-  height: 30px;
-  min-height: 30px;
+  width: var(--turbo-width);
+  height: var(--turbo-height);
+  min-height: var(--turbo-height);
   border: 0;
   border-radius: 999px;
   background: #343b46;
@@ -308,7 +320,7 @@ select {
 }
 
 .b-button {
-  transform: translateY(16px);
+  transform: translateY(8px);
 }
 
 .round-control.is-pressed,
@@ -318,7 +330,7 @@ select {
 }
 
 .b-button.is-pressed {
-  transform: translateY(20px);
+  transform: translateY(12px);
 }
 
 @media (orientation: landscape) and (max-height: 540px) {
@@ -337,7 +349,27 @@ select {
   }
 
   .controller {
+    --round-size: clamp(56px, 10vw, 64px);
+    --turbo-width: clamp(62px, 12vw, 72px);
+    --turbo-height: 28px;
+    min-height: 170px;
     align-self: stretch;
+    grid-template-columns: minmax(124px, 1fr) minmax(108px, 0.7fr) minmax(144px, 1fr);
+    gap: 10px;
+    padding: 14px 18px 22px;
+  }
+
+  .dpad {
+    width: clamp(124px, 16vw, 160px);
+  }
+
+  .menu-buttons {
+    padding-bottom: 10px;
+  }
+
+  .face-buttons {
+    justify-self: center;
+    gap: 7px 12px;
   }
 }
 
@@ -367,9 +399,13 @@ select {
   }
 
   .controller {
+    --round-size: clamp(58px, 18vw, 66px);
+    --turbo-width: clamp(58px, 18vw, 66px);
+    --turbo-height: 28px;
+    min-height: 166px;
     grid-template-columns: 1fr 0.72fr 1fr;
     gap: 8px;
-    padding: 12px;
+    padding: 12px 14px 20px;
   }
 
   .small-control {
@@ -377,29 +413,40 @@ select {
   }
 
   .face-buttons {
-    grid-template-columns: repeat(2, minmax(58px, 66px));
-    grid-template-rows: 32px 82px;
+    grid-template-columns: repeat(2, var(--round-size));
+    grid-template-rows: var(--turbo-height) calc(var(--round-size) + 14px);
     gap: 7px 10px;
   }
 
   .round-control {
-    width: clamp(58px, 18vw, 66px);
-    height: clamp(58px, 18vw, 66px);
-    min-height: clamp(58px, 18vw, 66px);
+    width: var(--round-size);
+    height: var(--round-size);
+    min-height: var(--round-size);
   }
 
   .turbo-control {
-    width: clamp(58px, 18vw, 66px);
+    width: var(--turbo-width);
     font-size: 0.68rem;
+  }
+
+  .b-button {
+    transform: translateY(4px);
+  }
+
+  .b-button.is-pressed {
+    transform: translateY(8px);
   }
 }
 
 @media (max-width: 430px) {
   .controller {
-    min-height: 144px;
+    --round-size: 52px;
+    --turbo-width: 56px;
+    --turbo-height: 27px;
+    min-height: 164px;
     grid-template-columns: 112px minmax(78px, 1fr) 116px;
     gap: 7px;
-    overflow: visible;
+    padding: 12px 12px 20px;
   }
 
   .dpad {
@@ -421,22 +468,27 @@ select {
   }
 
   .face-buttons {
-    grid-template-columns: repeat(2, 54px);
-    grid-template-rows: 30px 72px;
+    grid-template-columns: repeat(2, var(--round-size));
+    grid-template-rows: var(--turbo-height) calc(var(--round-size) + 12px);
     gap: 6px 8px;
   }
 
   .round-control {
-    width: 54px;
-    height: 54px;
-    min-height: 54px;
+    width: var(--round-size);
+    height: var(--round-size);
+    min-height: var(--round-size);
     font-size: 1.2rem;
   }
 
   .turbo-control {
-    width: 54px;
-    height: 28px;
-    min-height: 28px;
-    font-size: 0.62rem;
+    width: var(--turbo-width);
+    height: var(--turbo-height);
+    min-height: var(--turbo-height);
+    font-size: 0.58rem;
+  }
+
+  .b-button,
+  .b-button.is-pressed {
+    transform: none;
   }
 }
