@@ -129,6 +129,8 @@ function loadRomFromUrl(url, title) {
 function loadRomData(data, name) {
   releaseAllButtons();
   ensureEmulator().loadROM(data);
+  // Original NES audio is mono; JSNES defaults to decorative stereo panning.
+  emulator.nes.papu.setPanning([128, 128, 128, 128, 128]);
   running = true;
   loadedRomName = name;
   pauseButton.textContent = "Pause";
