@@ -366,6 +366,10 @@ let lastTouchEndAt = 0;
 document.addEventListener(
   "touchend",
   (event) => {
+    if (event.target.closest(".controller, button, select, .file-button")) {
+      return;
+    }
+
     const now = Date.now();
     if (now - lastTouchEndAt < 350) {
       event.preventDefault();

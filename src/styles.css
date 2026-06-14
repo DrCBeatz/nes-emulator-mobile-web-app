@@ -25,6 +25,7 @@ body,
 #app {
   min-height: 100%;
   overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
   -webkit-text-size-adjust: 100%;
   -webkit-touch-callout: none;
   -webkit-user-select: none;
@@ -50,6 +51,9 @@ input {
 button,
 .file-button,
 select {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
   border: 1px solid var(--line);
   background: #202632;
   color: var(--ink);
@@ -487,8 +491,11 @@ select {
     font-size: 0.58rem;
   }
 
-  .b-button,
-  .b-button.is-pressed {
+  .b-button {
     transform: none;
+  }
+
+  .b-button.is-pressed {
+    transform: translateY(4px);
   }
 }
