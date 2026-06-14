@@ -62,6 +62,7 @@ const buttonMap = {
 let emulator = null;
 let running = false;
 let loadedRomName = "";
+let audioSampleRate = null;
 const heldButtons = new Map();
 const dpadStateByPointer = new Map();
 
@@ -133,6 +134,30 @@ function loadRomData(data, name) {
   pauseButton.textContent = "Pause";
   setStatus(`Playing ${name}`);
   requestAnimationFrame(() => emulator?.fitInParent());
+  syncAudioSampleRate();
+}
+
+async function syncAudioSampleRate() {
+  const activeEmulator = emulator;
+  if (!activeEmulator?._speakers || !activeEmulator?.nes?.papu) return;
+
+  for (let attempt = 0; attempt < 20; attempt++) {
+    const sampleRate = activeEmulator._speakers.audioCtx?.sampleRate;
+
+    if (sampleRate) {
+      activeEmulator.nes.opts.sampleRate = sampleRate;
+      activeEmulator.nes.papu.sampleRate = sampleRate;
+      activeEmulator.nes.papu.setFrameRate(60);
+      audioSampleRate = sampleRate;
+
+      if (loadedRomName) {
+        setStatus(`Playing ${loadedRomName} - audio ${sampleRate} Hz`);
+      }
+      return;
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 25));
+  }
 }
 
 async function loadHostedRomManifest() {
@@ -300,6 +325,9 @@ pauseButton.addEventListener("click", () => {
   running = true;
   pauseButton.textContent = "Pause";
   setStatus(loadedRomName ? `Playing ${loadedRomName}` : "Running");
+  if (audioSampleRate && loadedRomName) {
+    setStatus(`Playing ${loadedRomName} - audio ${audioSampleRate} Hz`);
+  }
 });
 
 document.addEventListener("visibilitychange", () => {
