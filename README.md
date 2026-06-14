@@ -6,6 +6,19 @@ Live site: [https://8bitpocket.app](https://8bitpocket.app)
 
 ![8-Bit Pocket running Melo-Jellos 2 in Safari](docs/assets/8bitpocket-screenshot.jpg)
 
+## Try It
+
+Open [8bitpocket.app](https://8bitpocket.app), choose **Melo-Jellos 2** from **Hosted ROMs**, then press **Start**. You can also use **Open ROM** to load a local `.nes` file from your device; local ROM files stay in the browser and are not uploaded.
+
+## Technical Highlights
+
+- Added a mobile touch controller layer for D-pad, A/B, Start, Select, Turbo A, and Turbo B input
+- Supports both hosted homebrew ROMs and user-selected local ROM files
+- Tuned browser audio with runtime sample-rate sync and mono NES channel mixing
+- Hardened the mobile Safari experience against accidental zoom, text selection, and touch callouts
+- Ships as a static Vite app with no backend runtime
+- Deploys to AWS S3 behind CloudFront with ACM HTTPS, Route 53 DNS, and GitHub Actions CI/CD
+
 ## Features
 
 - Browser-based NES hardware emulation with JSNES
