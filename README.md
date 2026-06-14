@@ -4,6 +4,8 @@ A mobile-first NES emulator web app powered by [JSNES](https://github.com/bfirsh
 
 Live site: [https://8bitpocket.app](https://8bitpocket.app)
 
+![8-Bit Pocket running Melo-Jellos 2 in Safari](docs/assets/8bitpocket-screenshot.jpg)
+
 ## Features
 
 - Browser-based NES hardware emulation with JSNES
