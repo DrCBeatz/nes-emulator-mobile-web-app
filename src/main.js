@@ -81,6 +81,31 @@ function installAudioContextFallback() {
   }
 }
 
+function guardSpeakerStartup(speakers) {
+  if (!speakers || speakers.eightBitPocketGuarded) return;
+
+  const startSpeakers = speakers.start.bind(speakers);
+
+  speakers.start = async () => {
+    try {
+      await startSpeakers();
+    } catch (error) {
+      console.warn("JSNES audio output is unavailable in this browser.", error);
+      speakers.stop();
+      speakers.start = () => Promise.resolve();
+      speakers.writeSample = () => {};
+      speakers.flush = () => {};
+      audioSampleRate = null;
+
+      if (loadedRomName) {
+        setStatus(`Playing ${loadedRomName} - audio unavailable`);
+      }
+    }
+  };
+
+  speakers.eightBitPocketGuarded = true;
+}
+
 function ensureEmulator() {
   if (emulator) return emulator;
 
@@ -94,6 +119,7 @@ function ensureEmulator() {
       setStatus(error.message || "The emulator stopped unexpectedly.", "error");
     },
   });
+  guardSpeakerStartup(emulator._speakers);
 
   window.addEventListener("resize", () => emulator?.fitInParent());
   pauseButton.disabled = false;
