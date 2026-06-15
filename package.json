@@ -27,7 +27,7 @@
   },
   "homepage": "https://github.com/DrCBeatz/nes-emulator-mobile-web-app#readme",
   "dependencies": {
-    "jsnes": "^2.1.0",
+    "jsnes": "github:taiyuuki/jsnes#5b27c4243f1cb2528c54941e13c29c4ced7d5a45",
     "vite": "8.0.16"
   }
 }

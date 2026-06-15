@@ -72,9 +72,13 @@ To provide additional hosted ROMs, place licensed ROM files in `public/roms/` an
 
 ROM files are ignored by default. Add narrow `.gitignore` exceptions only for ROMs that you intentionally want to commit and are confident you can redistribute.
 
+## JSNES Fork
+
+8-Bit Pocket currently pins JSNES to `taiyuuki/jsnes` commit `5b27c4243f1cb2528c54941e13c29c4ced7d5a45`, which includes sprite rendering fixes from [bfirsh/jsnes#666](https://github.com/bfirsh/jsnes/pull/666). The fork is pinned to a specific commit so emulator behavior does not change unexpectedly when new commits land on the fork.
+
 ## Known Limitations
 
-8-Bit Pocket uses JSNES directly rather than a heavier accuracy-focused emulator core. Many games run well, but some ROMs may show sprite rendering artifacts or other compatibility issues. The goal of this project is a lightweight, mobile-friendly static web emulator for casual play, not cycle-perfect NES emulation.
+8-Bit Pocket uses JSNES directly rather than a heavier accuracy-focused emulator core. Many games run well, especially with the pinned JSNES fork noted above, but some ROMs may still show minor rendering artifacts or other compatibility issues. The goal of this project is a lightweight, mobile-friendly static web emulator for casual play, not cycle-perfect NES emulation.
 
 iOS Safari audio can be picky about user gestures and device audio settings. The app includes an `AudioContext` compatibility fallback and resumes suspended audio on controller input, but some device/browser combinations may still require checking silent mode, volume, or page reload state.
 
