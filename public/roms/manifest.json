@@ -15,12 +15,12 @@
   {
     "id": "hangar",
     "title": "Hangar",
-    "url": "/roms/hangar-ntsc-fcc47032.nes",
+    "url": "/roms/hangar-ntsc-e7bc3df4.nes",
     "author": "DrCBeatz",
     "source": "https://github.com/DrCBeatz/nes-hangar",
     "license": "Code: MIT. ROM includes E1M1-derived map data and reference-based artwork; see source provenance.",
     "provenance": "https://github.com/DrCBeatz/nes-hangar/blob/main/docs/PROVENANCE.md",
-    "sha256": "fcc47032e871a1b62c391b3a641552eb148dfcec44cb2ce2ff91ac461b4076c2",
+    "sha256": "e7bc3df411d5f2d45aa325329ead3db7c75ebb8a51a0607df15777ce8456a8a9",
     "region": "NTSC"
   }
 ]

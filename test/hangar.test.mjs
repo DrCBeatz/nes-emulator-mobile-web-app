@@ -8,7 +8,7 @@ import { NES, Controller } from "jsnes";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const releaseSha256 =
-  "fcc47032e871a1b62c391b3a641552eb148dfcec44cb2ce2ff91ac461b4076c2";
+  "e7bc3df411d5f2d45aa325329ead3db7c75ebb8a51a0607df15777ce8456a8a9";
 const coreCommit = "5b27c4243f1cb2528c54941e13c29c4ced7d5a45";
 
 // Read-only symbols from this exact Hangar release's linker output. The ROM
