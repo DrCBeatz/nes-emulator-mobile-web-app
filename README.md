@@ -8,7 +8,27 @@ Live site: [https://8bitpocket.app](https://8bitpocket.app)
 
 ## Try It
 
-Try [Hangar — an NES FPS prototype](https://8bitpocket.app/?game=hangar): click **Play Hangar**, then press **Start** on the game’s title screen. Alternatively, choose **Hangar** or **Melo-Jellos 2** from **Hosted ROMs**, or use **Open ROM** to load a local `.nes` file from your device; local ROM files stay in the browser and are not uploaded.
+Try [Hangar — an NES FPS prototype](https://8bitpocket.app/?game=hangar): read the keyboard guide, click **Play Hangar**, then press **Enter** or the on-screen **Start** button on the game’s title screen. Alternatively, choose **Hangar** or **Melo-Jellos 2** from **Hosted ROMs**, or use **Open ROM** to load a local `.nes` file from your device; local ROM files stay in the browser and are not uploaded.
+
+## Hangar keyboard controls
+
+The guide appears before Play when opening Hangar’s link or choosing Hangar
+from the hosted picker. Use **Controls** to reopen it; the emulator pauses
+while the guide covers the screen and resumes on close only if it was running
+beforehand.
+
+| Default key | Hangar action |
+| --- | --- |
+| Up / Down | Walk forward / backward |
+| Left / Right | Turn |
+| X + Left / Right | Strafe |
+| X | Use a nearby door or exit switch (NES A) |
+| Z or Y | Fire (NES B) |
+| Enter | Begin, pause/resume, retry (Start) |
+| Ctrl | Toggle the edge-rendering comparison (Select) |
+
+Saved custom JSNES keyboard bindings can differ; this guide does not replace
+them. Touchscreen players can use the NES controller below the game.
 
 ## Technical Highlights
 
@@ -25,6 +45,7 @@ Try [Hangar — an NES FPS prototype](https://8bitpocket.app/?game=hangar): clic
 - Local ROM loading from the user's device
 - Hosted ROM picker via `public/roms/manifest.json`
 - Direct game links such as `?game=hangar`, with a Play button for audio startup
+- Hangar keyboard guide before Play, with a Controls button to reopen it safely during play
 - Touch controls modeled after an NES controller
 - Turbo A and Turbo B controls for casual mobile play
 - Authentic mono audio mix, matching the original NES output

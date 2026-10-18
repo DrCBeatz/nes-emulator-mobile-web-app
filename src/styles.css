@@ -150,11 +150,86 @@ select {
   font-weight: 700;
 }
 
+#controls-button {
+  padding: 0 12px;
+  font-weight: 700;
+}
+
+#controls-button[hidden],
+.controls-guide[hidden] {
+  display: none;
+}
+
 .stage {
   min-height: 0;
   display: grid;
   grid-template-rows: minmax(190px, 1fr) auto;
   gap: 10px;
+}
+
+.screen-stack {
+  position: relative;
+  display: grid;
+  min-width: 0;
+  min-height: 220px;
+}
+
+.controls-guide {
+  position: absolute;
+  z-index: 1;
+  inset: 12px;
+  overflow: auto;
+  padding: 16px 20px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--panel);
+  scrollbar-gutter: stable;
+}
+
+.controls-guide h2 {
+  margin: 0 0 6px;
+  font-size: 1rem;
+}
+
+.controls-note {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+.keyboard-bindings {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 20px;
+  margin: 16px 0;
+  font-size: 0.86rem;
+}
+
+.keyboard-bindings dt {
+  line-height: 1.7;
+}
+
+.keyboard-bindings dt span {
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.keyboard-bindings dd {
+  margin: 2px 0 0;
+  line-height: 1.35;
+}
+
+.keyboard-bindings kbd {
+  display: inline-block;
+  min-width: 22px;
+  padding: 0 4px;
+  border: 1px solid #667180;
+  border-bottom-width: 2px;
+  border-radius: 3px;
+  background: #11161d;
+  font: 700 0.82rem / 1.4 ui-monospace, monospace;
+  text-align: center;
 }
 
 .screen {
@@ -210,7 +285,8 @@ select {
   display: none;
 }
 
-.launch-game:focus-visible {
+.launch-game:focus-visible,
+#controls-button:focus-visible {
   outline: 3px solid var(--blue);
   outline-offset: 3px;
 }
@@ -417,6 +493,15 @@ select {
     width: 100%;
   }
 
+  .rom-actions:has(#controls-button:not([hidden])) {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .rom-actions:has(#controls-button:not([hidden])) > * {
+    width: auto;
+  }
+
   .file-button,
   select,
   #pause-button {
@@ -465,6 +550,15 @@ select {
 }
 
 @media (max-width: 430px) {
+  .controls-guide {
+    padding: 12px;
+  }
+
+  .keyboard-bindings {
+    gap: 10px 12px;
+    font-size: 0.78rem;
+  }
+
   .controller {
     --round-size: 52px;
     --turbo-width: 56px;

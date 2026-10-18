@@ -18,12 +18,29 @@ app.innerHTML = `
         <select id="hosted-roms" aria-label="Hosted ROMs">
           <option value="">Hosted ROMs</option>
         </select>
+        <button id="controls-button" type="button" aria-controls="hangar-controls" aria-expanded="false" hidden>Controls</button>
         <button id="pause-button" type="button" disabled>Pause</button>
       </div>
     </section>
 
     <section class="stage" aria-label="NES emulator">
-      <div id="nes-screen" class="screen" aria-label="Game screen"></div>
+      <div class="screen-stack">
+        <div id="nes-screen" class="screen" aria-label="Game screen" tabindex="-1"></div>
+        <section id="hangar-controls" class="controls-guide" aria-labelledby="controls-title" tabindex="0" hidden>
+          <h2 id="controls-title">Hangar keyboard controls</h2>
+          <p class="controls-note">Default keys. Saved custom bindings may differ.</p>
+          <dl class="keyboard-bindings">
+            <div><dt><kbd>↑</kbd> <kbd>↓</kbd></dt><dd>Walk forward / back</dd></div>
+            <div><dt><kbd>←</kbd> <kbd>→</kbd></dt><dd>Turn left / right</dd></div>
+            <div><dt><kbd>X</kbd> <span>(A)</span></dt><dd>Use door / exit switch</dd></div>
+            <div><dt><kbd>X</kbd> + <kbd>←</kbd> / <kbd>→</kbd></dt><dd>Strafe left / right</dd></div>
+            <div><dt><kbd>Z</kbd> or <kbd>Y</kbd> <span>(B)</span></dt><dd>Fire</dd></div>
+            <div><dt><kbd>Enter</kbd> <span>(Start)</span></dt><dd>Begin / pause game</dd></div>
+            <div><dt><kbd>Ctrl</kbd> <span>(Select)</span></dt><dd>Toggle edge comparison</dd></div>
+          </dl>
+          <p class="controls-note">On touchscreens, use the NES buttons below. Hold A with left / right to strafe.</p>
+        </section>
+      </div>
       <div class="stage-actions">
         <button id="launch-game" class="launch-game" type="button" hidden>Play Hangar</button>
         <p id="status" class="status" role="status" aria-live="polite" aria-atomic="true">Open a .nes file to start.</p>
@@ -57,6 +74,8 @@ const pauseButton = document.querySelector("#pause-button");
 const statusEl = document.querySelector("#status");
 const dpadEl = document.querySelector("#dpad");
 const launchButton = document.querySelector("#launch-game");
+const controlsButton = document.querySelector("#controls-button");
+const controlsGuide = document.querySelector("#hangar-controls");
 
 const buttonMap = {
   a: Controller.BUTTON_A,
@@ -75,6 +94,7 @@ let loading = false;
 let loadSequence = 0;
 let pendingFetch = null;
 let linkedGame = null;
+let resumeAfterControls = false;
 const hostedRoms = new Map();
 const requestedGame = new URLSearchParams(window.location.search).get("game");
 const heldButtons = new Map();
@@ -207,11 +227,44 @@ function dismissLinkedGame() {
   linkedGame = null;
 }
 
-function beginRomLoad(name) {
+function showControls(open) {
+  controlsGuide.hidden = !open || controlsButton.hidden;
+  controlsButton.setAttribute("aria-expanded", String(!controlsGuide.hidden));
+}
+
+function setControlsGame(gameId, open = false) {
+  resumeAfterControls = false;
+  controlsButton.hidden = gameId !== "hangar";
+  showControls(open);
+}
+
+function prepareHostedGame(rom) {
+  // Choosing Hangar is a new selection even before Play. Cancel an older
+  // in-flight cartridge so it cannot start behind the guide while reading.
+  ++loadSequence;
+  pendingFetch?.abort();
+  pendingFetch = null;
+  running = false;
+  loading = false;
+  loadedRomName = "";
+  releaseAllButtons();
+  emulator?.stop();
+  pauseButton.disabled = true;
+  linkedGame = rom;
+  launchButton.textContent = `Play ${rom.title}`;
+  launchButton.hidden = false;
+  controlsButton.disabled = false;
+  setControlsGame(rom.id, true);
+  setStatus(`${rom.title} is ready. Press Play to start with sound.`);
+}
+
+function beginRomLoad(name, gameId = null) {
   const sequence = ++loadSequence;
   pendingFetch?.abort();
   pendingFetch = null;
   dismissLinkedGame();
+  setControlsGame(gameId);
+  controlsButton.disabled = true;
   releaseAllButtons();
   // A previous in-progress request shares the primed audio startup. Do not
   // close that context while its AudioWorklet is still initializing.
@@ -230,7 +283,7 @@ async function loadHostedRom(rom) {
   if (!rom) return;
   let request;
   try {
-    request = beginRomLoad(rom.title);
+    request = beginRomLoad(rom.title, rom.id);
     const controller = new AbortController();
     pendingFetch = controller;
     const response = await fetch(rom.url, { signal: controller.signal });
@@ -255,6 +308,7 @@ async function failRomLoad(request, error) {
   running = false;
   emulator?.stop();
   pauseButton.disabled = true;
+  controlsButton.disabled = false;
   setStatus(error.message || "Could not load that ROM. Try selecting it again.", "error");
 }
 
@@ -270,8 +324,10 @@ function loadRomData(data, name, sequence) {
   loadedRomName = name;
   emulator.start();
   pauseButton.disabled = false;
+  controlsButton.disabled = false;
   pauseButton.textContent = "Pause";
   setStatus(`Playing ${name}`);
+  screenEl.focus({ preventScroll: true });
   requestAnimationFrame(() => emulator?.fitInParent());
   syncAudioSampleRate(sequence);
 }
@@ -325,11 +381,9 @@ async function loadHostedRomManifest() {
     }
     // A slow manifest must not replace a local file the player chose first.
     if (requestedGame !== null && loadSequence === 0) {
-      linkedGame = hostedRoms.get(requestedGame) || null;
-      if (linkedGame) {
-        launchButton.textContent = `Play ${linkedGame.title}`;
-        launchButton.hidden = false;
-        setStatus(`${linkedGame.title} is ready. Press Play to start with sound.`);
+      const rom = hostedRoms.get(requestedGame);
+      if (rom) {
+        prepareHostedGame(rom);
       } else {
         setStatus("Game not found. Choose a hosted ROM or open a .nes file.", "error");
       }
@@ -356,6 +410,10 @@ function releaseButton(button) {
 }
 
 function releaseAllButtons() {
+  // Include keyboard/gamepad state, which is not tracked in heldButtons.
+  for (const button of Object.values(Controller)) {
+    emulator?.nes.buttonUp(1, button);
+  }
   for (const button of heldButtons.keys()) {
     emulator?.nes.buttonUp(1, button);
   }
@@ -469,7 +527,9 @@ fileInput.addEventListener("change", () => {
 });
 
 hostedSelect.addEventListener("change", () => {
-  loadHostedRom(hostedRoms.get(hostedSelect.value));
+  const rom = hostedRoms.get(hostedSelect.value);
+  if (rom?.id === "hangar") prepareHostedGame(rom);
+  else loadHostedRom(rom);
   hostedSelect.value = "";
 });
 
@@ -477,6 +537,33 @@ launchButton.addEventListener("click", () => {
   // beginRomLoad clears linkedGame synchronously, so repeated clicks cannot
   // issue a duplicate load, even before the first network request completes.
   if (linkedGame) loadHostedRom(linkedGame);
+});
+
+controlsButton.addEventListener("click", () => {
+  if (controlsButton.hidden || loading) return;
+  if (controlsGuide.hidden) {
+    resumeAfterControls = running;
+    if (running) emulator.stop();
+    running = false;
+    releaseAllButtons();
+    pauseButton.disabled = true;
+    showControls(true);
+    if (loadedRomName) setStatus(`Controls — ${loadedRomName} is paused.`);
+  } else {
+    showControls(false);
+    releaseAllButtons();
+    if (loadedRomName) {
+      if (resumeAfterControls) {
+        emulator.start();
+        running = true;
+      }
+      pauseButton.disabled = false;
+      pauseButton.textContent = running ? "Pause" : "Resume";
+      setStatus(`${running ? "Playing" : "Paused"} ${loadedRomName}`);
+      screenEl.focus({ preventScroll: true });
+    }
+    resumeAfterControls = false;
+  }
 });
 
 pauseButton.addEventListener("click", () => {
@@ -494,11 +581,23 @@ pauseButton.addEventListener("click", () => {
   emulator.start();
   running = true;
   pauseButton.textContent = "Pause";
+  screenEl.focus({ preventScroll: true });
   setStatus(loadedRomName ? `Playing ${loadedRomName}` : "Running");
   if (audioSampleRate && loadedRomName) {
     setStatus(`Playing ${loadedRomName} - audio ${audioSampleRate} Hz`);
   }
 });
+
+// JSNES listens on document and otherwise consumes Enter/arrows even while
+// a toolbar button, selector or the help panel has keyboard focus.
+for (const type of ["keydown", "keyup", "keypress"]) {
+  document.addEventListener(type, (event) => {
+    if (!controlsGuide.hidden || event.target?.closest(".rom-actions, .stage-actions, .controls-guide")) {
+      if (type === "keyup") releaseAllButtons();
+      event.stopPropagation();
+    }
+  }, true);
+}
 
 document.addEventListener("visibilitychange", () => {
   if (document.hidden) releaseAllButtons();
