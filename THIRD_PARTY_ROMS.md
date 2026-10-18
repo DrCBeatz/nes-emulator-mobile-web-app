@@ -20,9 +20,9 @@ The ROM is redistributed unmodified as a playable demo for 8-Bit Pocket.
 
 - Author: DrCBeatz and contributors
 - Source: https://github.com/DrCBeatz/nes-hangar
-- Release: `prototype-2026-10-18` (NTSC, MMC1)
-- Local path: `public/roms/hangar-ntsc-644d047c.nes`
-- SHA-256: `644d047c07fe9ade8c14b87c42faa5720b026e0a13c017c4326be604adebbc87`
+- Release: `prototype-2026-10-18-gameplay` (NTSC, MMC1)
+- Local path: `public/roms/hangar-ntsc-fcc47032.nes`
+- SHA-256: `fcc47032e871a1b62c391b3a641552eb148dfcec44cb2ce2ff91ac461b4076c2`
 - Original engine, gameplay code and build tools: MIT
 - Adapted E1M1 level and visual content: separate provenance; no blanket MIT content license is assigned. See the project’s [license scope](https://github.com/DrCBeatz/nes-hangar/blob/main/LICENSE-SCOPE.md) and [provenance](https://github.com/DrCBeatz/nes-hangar/blob/main/docs/PROVENANCE.md).
 

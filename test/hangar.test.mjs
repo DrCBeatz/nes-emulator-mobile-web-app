@@ -8,7 +8,7 @@ import { NES, Controller } from "jsnes";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const releaseSha256 =
-  "644d047c07fe9ade8c14b87c42faa5720b026e0a13c017c4326be604adebbc87";
+  "fcc47032e871a1b62c391b3a641552eb148dfcec44cb2ce2ff91ac461b4076c2";
 const coreCommit = "5b27c4243f1cb2528c54941e13c29c4ced7d5a45";
 
 // Read-only symbols from this exact Hangar release's linker output. The ROM
@@ -25,6 +25,9 @@ const address = {
   enemyXHigh: 32480, enemyZ: 242, enemyZHigh: 32481,
   enemyEpoch: 244, visibleEnemyEpoch: 36, enemyTarget: 2022,
   corpse: 28344, simulation: 205, enemyAttack: 251, enemyTimer: 252,
+  fireTimer: 1987, cooldown: 1986, activeEncounter: 2032,
+  pickups: 58, door: 1883, visibleDoor: 1889, results: 1952,
+  resultKills: 1950, resultItems: 1951, exitFlags: 1,
 };
 const button = {
   a: Controller.BUTTON_A, b: Controller.BUTTON_B,
@@ -85,6 +88,9 @@ test("hosted Hangar boots and plays in the pinned JSNES core", { timeout: 120_00
     simulation: byte("simulation"), enemyAttack: byte("enemyAttack"),
     enemyTimer: byte("enemyTimer"), clock: clock(), mode: byte("mode"),
     publication: byte("publication"), uploadBusy: byte("uploadBusy"),
+    fireTimer: byte("fireTimer"), cooldown: byte("cooldown"),
+    activeEncounter: byte("activeEncounter"), pickups: byte("pickups"),
+    door: byte("door"), results: byte("results"),
   });
   const setButtons = (names = []) => {
     const active = new Set(names);
@@ -195,6 +201,89 @@ test("hosted Hangar boots and plays in the pinned JSNES core", { timeout: 120_00
   assert.ok(byte("health") > 0);
   run(2);
   snapshots.afterCombat = state();
+
+  const walk = (x, z) => {
+    until(`walk to ${x},${z}`, () => Math.hypot(x * 256 - coordinate("x"), z * 256 - coordinate("z")) <= 0.6 * 256,
+      () => steer(x * 256, z * 256, true), 1800);
+    assert.ok(byte("health") > 0, "Player survives traversal");
+  };
+  const face = (angle) => until(`face ${angle}`, () => byte("angle") === angle, () => {
+    const delta = (angle - byte("angle")) & 255;
+    return [delta < 128 ? "right" : "left"];
+  }, 600);
+
+  // Deliberately spend the remaining three rounds into an empty wall, then
+  // verify the new click without changing ammunition, shots, hits or kills.
+  face(192);
+  until("spend last three rounds", () => byte("ammo") === 0, ["b"]);
+  until("last gunshot tail ends", () => byte("cooldown") === 0 && byte("fireTimer") === 0, []);
+  assert.equal(word("shots"), 6);
+  const dryAccounting = [byte("ammo"), word("shots"), byte("hits"), byte("kills")];
+  step(["b"]);
+  assert.equal(byte("fireTimer"), 0x82);
+  assert.equal(byte("cooldown"), 15);
+  step(["start", "b"]);
+  assert.equal(byte("paused"), 1);
+  const dryPaused = state();
+  run(30, ["start", "b"]);
+  assert.deepEqual(state(), dryPaused, "Pause freezes the short click as well as gameplay");
+  run(2);
+  step(["start"]);
+  assert.equal(byte("paused"), 0);
+  assert.deepEqual(state(), dryPaused);
+  run(2);
+  assert.equal(byte("fireTimer"), 0, "The click stops after two resumed active ticks");
+  assert.deepEqual([byte("ammo"), word("shots"), byte("hits"), byte("kills")], dryAccounting);
+  snapshots.emptyClick = state();
+
+  walk(144, 344);
+  assert.ok(byte("pickups") & 0x80, "Medkit collected while injured");
+  assert.equal(byte("health"), 100);
+  for (const [x, z] of [[144, 296], [228, 296], [244, 296], [264, 290], [288, 272], [290, 256], [274, 252]]) walk(x, z);
+  assert.equal(byte("activeEncounter"), 1);
+  assert.ok(byte("pickups") & 0x40, "The tighter clip can be collected from the dry entrance");
+  assert.equal(byte("ammo"), 10, "Zero ammunition is replenished before the second fight");
+  snapshots.ammoPickup = state();
+  for (const [x, z] of [[290, 252], [296, 250]]) walk(x, z);
+  until("second three-hit soldier defeat", () => byte("enemyHp") === 0, () => {
+    const names = steer(coordinate("enemyX"), coordinate("enemyZ"), false);
+    if (byte("enemyTarget") !== 0 && byte("visibleAngle") === byte("angle") &&
+        byte("visibleEnemyEpoch") === byte("enemyEpoch")) names.push("b");
+    return names;
+  }, 2400);
+  assert.equal(byte("kills"), 2);
+  assert.equal(byte("hits"), 6);
+  assert.equal(word("shots"), 9);
+  assert.equal(byte("ammo"), 7);
+  snapshots.secondCombat = state();
+
+  for (const [x, z] of [[296, 224], [308, 206], [296, 180], [296, 166], [296, 136], [296, 124]]) walk(x, z);
+  face(128);
+  run(2);
+  step(["a"]);
+  assert.equal(byte("door"), 1, "Fresh A requests the door");
+  until("door actually opens", () => byte("door") === 2 && byte("visibleDoor") === 1, ["up"]);
+  for (const [x, z] of [[296, 116], [296, 92], [296, 60], [296, 44], [296, 28], [293, 33]]) walk(x, z);
+  face(174); // Both position and angle are newly within the wider exit zone.
+  run(2);
+  assert.equal(byte("results"), 0);
+  step(["a"]);
+  assert.ok(byte("exitFlags") & 0x80);
+  until("completion screen", () => byte("results") === 5, []);
+  assert.equal(byte("resultKills"), 2);
+  assert.equal(byte("resultItems"), 2);
+  assert.ok(clock() > 0);
+  snapshots.completion = state();
+  run(180, ["start"]);
+  assert.equal(byte("title"), 0, "Completion restart returns directly to gameplay");
+  assert.equal(byte("paused"), 0, "Held restart Start must not pause the new game");
+  assert.equal(byte("health"), 100);
+  assert.equal(byte("ammo"), 6);
+  assert.equal(word("shots"), 0);
+  assert.equal(byte("kills"), 0);
+  assert.equal(byte("pickups"), 0);
+  assert.equal(byte("door"), 0);
+  snapshots.restart = state();
   assert.ok(generatedPictures >= frame - 2);
   assert.ok(audioSamples > 0 && nonzeroAudioSamples > 0);
   t.diagnostic(JSON.stringify({

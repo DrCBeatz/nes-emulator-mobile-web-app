@@ -5,7 +5,7 @@ dist/
 # Local ROM/test artifacts. Keep game files out of git.
 *.nes
 !public/roms/melo-jellos-2.nes
-!public/roms/hangar-ntsc-644d047c.nes
+!public/roms/hangar-ntsc-fcc47032.nes
 *.zip
 *.fds
 *.unf
