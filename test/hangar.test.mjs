@@ -8,7 +8,7 @@ import { NES, Controller } from "jsnes";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const releaseSha256 =
-  "e7bc3df411d5f2d45aa325329ead3db7c75ebb8a51a0607df15777ce8456a8a9";
+  "08ba1092db774a1c543345274f0835c8ca2413a725484a870286a746fa9c2462";
 const coreCommit = "5b27c4243f1cb2528c54941e13c29c4ced7d5a45";
 
 // Read-only symbols from this exact Hangar release's linker output. The ROM
@@ -213,28 +213,28 @@ test("hosted Hangar boots and plays in the pinned JSNES core", { timeout: 120_00
   }, 600);
 
   // Deliberately spend the remaining three rounds into an empty wall, then
-  // verify the new click without changing ammunition, shots, hits or kills.
+  // verify the low empty-gun cue without changing ammunition, shots, hits or kills.
   face(192);
   until("spend last three rounds", () => byte("ammo") === 0, ["b"]);
   until("last gunshot tail ends", () => byte("cooldown") === 0 && byte("fireTimer") === 0, []);
   assert.equal(word("shots"), 6);
   const dryAccounting = [byte("ammo"), word("shots"), byte("hits"), byte("kills")];
   step(["b"]);
-  assert.equal(byte("fireTimer"), 0x82);
+  assert.equal(byte("fireTimer"), 0x88);
   assert.equal(byte("cooldown"), 15);
   step(["start", "b"]);
   assert.equal(byte("paused"), 1);
   const dryPaused = state();
   run(30, ["start", "b"]);
-  assert.deepEqual(state(), dryPaused, "Pause freezes the short click as well as gameplay");
+  assert.deepEqual(state(), dryPaused, "Pause freezes the empty-gun cue as well as gameplay");
   run(2);
   step(["start"]);
   assert.equal(byte("paused"), 0);
   assert.deepEqual(state(), dryPaused);
-  run(2);
-  assert.equal(byte("fireTimer"), 0, "The click stops after two resumed active ticks");
+  run(8);
+  assert.equal(byte("fireTimer"), 0, "The cue stops after eight resumed active ticks");
   assert.deepEqual([byte("ammo"), word("shots"), byte("hits"), byte("kills")], dryAccounting);
-  snapshots.emptyClick = state();
+  snapshots.emptyCue = state();
 
   walk(144, 344);
   assert.ok(byte("pickups") & 0x80, "Medkit collected while injured");
