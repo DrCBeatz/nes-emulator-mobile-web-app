@@ -193,6 +193,28 @@ select {
   color: #ff9ca5;
 }
 
+.stage-actions {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+}
+
+.launch-game {
+  padding: 0 24px;
+  min-height: 44px;
+  background: var(--red-dark);
+  font-weight: 800;
+}
+
+.launch-game[hidden] {
+  display: none;
+}
+
+.launch-game:focus-visible {
+  outline: 3px solid var(--blue);
+  outline-offset: 3px;
+}
+
 .controller {
   --dpad-size: clamp(132px, 24vw, 176px);
   --round-size: 72px;

@@ -24,7 +24,10 @@ app.innerHTML = `
 
     <section class="stage" aria-label="NES emulator">
       <div id="nes-screen" class="screen" aria-label="Game screen"></div>
-      <p id="status" class="status">Open a .nes file to start.</p>
+      <div class="stage-actions">
+        <button id="launch-game" class="launch-game" type="button" hidden>Play Hangar</button>
+        <p id="status" class="status" role="status" aria-live="polite" aria-atomic="true">Open a .nes file to start.</p>
+      </div>
     </section>
 
     <section class="controller" aria-label="NES controller">
@@ -53,6 +56,7 @@ const hostedSelect = document.querySelector("#hosted-roms");
 const pauseButton = document.querySelector("#pause-button");
 const statusEl = document.querySelector("#status");
 const dpadEl = document.querySelector("#dpad");
+const launchButton = document.querySelector("#launch-game");
 
 const buttonMap = {
   a: Controller.BUTTON_A,
@@ -67,6 +71,12 @@ let emulator = null;
 let running = false;
 let loadedRomName = "";
 let audioSampleRate = null;
+let loading = false;
+let loadSequence = 0;
+let pendingFetch = null;
+let linkedGame = null;
+const hostedRoms = new Map();
+const requestedGame = new URLSearchParams(window.location.search).get("game");
 const heldButtons = new Map();
 const dpadStateByPointer = new Map();
 
@@ -85,22 +95,50 @@ function guardSpeakerStartup(speakers) {
   if (!speakers || speakers.eightBitPocketGuarded) return;
 
   const startSpeakers = speakers.start.bind(speakers);
+  const stopSpeakers = speakers.stop.bind(speakers);
+  const onBufferUnderrun = speakers.onBufferUnderrun;
+  let starting = null;
+  let stopRequested = false;
 
-  speakers.start = async () => {
-    try {
-      await startSpeakers();
-    } catch (error) {
+  // Priming audio must not execute NES frames before a ROM has loaded.
+  speakers.onBufferUnderrun = () => {
+    if (running && !loading) onBufferUnderrun?.();
+  };
+
+  speakers.start = () => {
+    stopRequested = false;
+    if (starting) return starting;
+    if (speakers.audioCtx) {
+      resumeAudioContext();
+      return Promise.resolve();
+    }
+
+    // startSpeakers creates its AudioContext synchronously, while the click
+    // gesture is active. Reuse that context when the fetched ROM starts.
+    starting = startSpeakers().catch((error) => {
       console.warn("JSNES audio output is unavailable in this browser.", error);
-      speakers.stop();
+      stopSpeakers();
       speakers.start = () => Promise.resolve();
       speakers.writeSample = () => {};
       speakers.flush = () => {};
       audioSampleRate = null;
 
-      if (loadedRomName) {
+      if (running && loadedRomName) {
         setStatus(`Playing ${loadedRomName} - audio unavailable`);
       }
-    }
+    }).finally(() => {
+      starting = null;
+      if (stopRequested) stopSpeakers();
+    });
+    resumeAudioContext();
+    return starting;
+  };
+
+  speakers.stop = () => {
+    stopRequested = true;
+    // A quick Pause or another ROM selection can arrive during Resume's
+    // worklet initialization too. Its context must remain valid until done.
+    if (!starting) stopSpeakers();
   };
 
   speakers.eightBitPocketGuarded = true;
@@ -120,9 +158,14 @@ function ensureEmulator() {
     },
   });
   guardSpeakerStartup(emulator._speakers);
+  const generateFrame = emulator._frameTimer.onGenerateFrame;
+  emulator._frameTimer.onGenerateFrame = () => {
+    // The upstream timer may still have setTimeout catch-up frames queued
+    // after stop(); they must not run an old or partially loaded cartridge.
+    if (running && !loading) generateFrame();
+  };
 
   window.addEventListener("resize", () => emulator?.fitInParent());
-  pauseButton.disabled = false;
   return emulator;
 }
 
@@ -147,48 +190,98 @@ function bytesToBinaryString(buffer) {
 
 async function loadRomFromFile(file) {
   if (!file) return;
-  setStatus(`Loading ${file.name}...`);
+  let request;
 
   try {
-    const data = bytesToBinaryString(await file.arrayBuffer());
-    loadRomData(data, file.name);
+    request = beginRomLoad(file.name);
+    const [buffer] = await Promise.all([file.arrayBuffer(), request.audioReady]);
+    if (request.sequence !== loadSequence) return;
+    loadRomData(bytesToBinaryString(buffer), file.name, request.sequence);
   } catch (error) {
-    setStatus(error.message || "Could not load that ROM.", "error");
+    await failRomLoad(request, error);
   }
 }
 
-function loadRomFromUrl(url, title) {
-  if (!url) return;
-  setStatus(`Loading ${title}...`);
-
-  Browser.loadROMFromURL(url, (error, data) => {
-    if (error || !data) {
-      setStatus(error?.message || "Could not load that hosted ROM.", "error");
-      return;
-    }
-
-    loadRomData(data, title);
-  });
+function dismissLinkedGame() {
+  launchButton.hidden = true;
+  linkedGame = null;
 }
 
-function loadRomData(data, name) {
+function beginRomLoad(name) {
+  const sequence = ++loadSequence;
+  pendingFetch?.abort();
+  pendingFetch = null;
+  dismissLinkedGame();
   releaseAllButtons();
-  ensureEmulator().loadROM(data);
+  // A previous in-progress request shares the primed audio startup. Do not
+  // close that context while its AudioWorklet is still initializing.
+  if (!loading) emulator?.stop();
+  running = false;
+  loading = true;
+  loadedRomName = "";
+  audioSampleRate = null;
+  pauseButton.disabled = true;
+  setStatus(`Loading ${name}...`);
+  const audioReady = ensureEmulator()._speakers.start();
+  return { sequence, audioReady };
+}
+
+async function loadHostedRom(rom) {
+  if (!rom) return;
+  let request;
+  try {
+    request = beginRomLoad(rom.title);
+    const controller = new AbortController();
+    pendingFetch = controller;
+    const response = await fetch(rom.url, { signal: controller.signal });
+    if (!response.ok) throw new Error(`Could not load ${rom.title} (${response.status}).`);
+    const [buffer] = await Promise.all([response.arrayBuffer(), request.audioReady]);
+    if (request.sequence !== loadSequence) return;
+    pendingFetch = null;
+    loadRomData(bytesToBinaryString(buffer), rom.title, request.sequence);
+  } catch (error) {
+    await failRomLoad(request, error);
+  }
+}
+
+async function failRomLoad(request, error) {
+  // Wait before stopping speakers: the upstream worklet setup still uses
+  // its context after its asynchronous addModule call.
+  const sequence = request?.sequence ?? loadSequence;
+  await request?.audioReady;
+  if (sequence !== loadSequence) return;
+  pendingFetch = null;
+  loading = false;
+  running = false;
+  emulator?.stop();
+  pauseButton.disabled = true;
+  setStatus(error.message || "Could not load that ROM. Try selecting it again.", "error");
+}
+
+function loadRomData(data, name, sequence) {
+  releaseAllButtons();
+  // Browser.loadROM would close the AudioContext unlocked by the gesture.
+  // Its frame timer is already stopped; load the core, then reuse the audio.
+  emulator.nes.loadROM(data);
   // Original NES audio is mono; JSNES defaults to decorative stereo panning.
   emulator.nes.papu.setPanning([128, 128, 128, 128, 128]);
   running = true;
+  loading = false;
   loadedRomName = name;
+  emulator.start();
+  pauseButton.disabled = false;
   pauseButton.textContent = "Pause";
   setStatus(`Playing ${name}`);
   requestAnimationFrame(() => emulator?.fitInParent());
-  syncAudioSampleRate();
+  syncAudioSampleRate(sequence);
 }
 
-async function syncAudioSampleRate() {
+async function syncAudioSampleRate(sequence) {
   const activeEmulator = emulator;
   if (!activeEmulator?._speakers || !activeEmulator?.nes?.papu) return;
 
   for (let attempt = 0; attempt < 20; attempt++) {
+    if (sequence !== loadSequence || !running || loading) return;
     const sampleRate = activeEmulator._speakers.audioCtx?.sampleRate;
 
     if (sampleRate) {
@@ -212,18 +305,41 @@ async function loadHostedRomManifest() {
     const response = await fetch("/roms/manifest.json", { cache: "no-store" });
     if (!response.ok) throw new Error("No hosted ROM manifest found.");
 
-    const roms = (await response.json()).filter((rom) => rom.title && rom.url);
-    if (roms.length === 0) return;
+    const entries = await response.json();
+    if (!Array.isArray(entries)) throw new Error("Invalid hosted ROM manifest.");
+    for (const rom of entries) {
+      if (!rom || typeof rom.id !== "string" || !/^[a-z0-9-]+$/.test(rom.id) ||
+          typeof rom.title !== "string" || !rom.title.trim() ||
+          typeof rom.url !== "string" || !/^\/roms\/[a-zA-Z0-9._-]+\.nes$/.test(rom.url) ||
+          hostedRoms.has(rom.id)) continue;
+      hostedRoms.set(rom.id, rom);
+    }
+    if (!hostedRoms.size) throw new Error("No hosted ROMs available.");
 
     hostedSelect.innerHTML = `<option value="">Hosted ROMs</option>`;
-    for (const rom of roms) {
+    for (const rom of hostedRoms.values()) {
       const option = document.createElement("option");
-      option.value = rom.url;
+      option.value = rom.id;
       option.textContent = rom.title;
       hostedSelect.appendChild(option);
     }
+    // A slow manifest must not replace a local file the player chose first.
+    if (requestedGame !== null && loadSequence === 0) {
+      linkedGame = hostedRoms.get(requestedGame) || null;
+      if (linkedGame) {
+        launchButton.textContent = `Play ${linkedGame.title}`;
+        launchButton.hidden = false;
+        setStatus(`${linkedGame.title} is ready. Press Play to start with sound.`);
+      } else {
+        setStatus("Game not found. Choose a hosted ROM or open a .nes file.", "error");
+      }
+    }
   } catch {
     hostedSelect.disabled = true;
+    if (loadSequence === 0) {
+      dismissLinkedGame();
+      setStatus("Hosted ROMs are unavailable. You can still open a .nes file.", "error");
+    }
   }
 }
 
@@ -353,13 +469,18 @@ fileInput.addEventListener("change", () => {
 });
 
 hostedSelect.addEventListener("change", () => {
-  const option = hostedSelect.selectedOptions[0];
-  loadRomFromUrl(hostedSelect.value, option?.textContent || "Hosted ROM");
+  loadHostedRom(hostedRoms.get(hostedSelect.value));
   hostedSelect.value = "";
 });
 
+launchButton.addEventListener("click", () => {
+  // beginRomLoad clears linkedGame synchronously, so repeated clicks cannot
+  // issue a duplicate load, even before the first network request completes.
+  if (linkedGame) loadHostedRom(linkedGame);
+});
+
 pauseButton.addEventListener("click", () => {
-  if (!emulator) return;
+  if (!emulator || loading || !loadedRomName) return;
 
   if (running) {
     emulator.stop();

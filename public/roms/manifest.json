@@ -3,9 +3,24 @@
     "title": "Melo-Jellos 2",
     "url": "/roms/melo-jellos-2.nes",
     "author": "Adrian Makes Games",
-    "contributors": ["ptoing", "SoundSync5000"],
+    "contributors": [
+      "ptoing",
+      "SoundSync5000"
+    ],
     "license": "CC-BY-SA 4.0",
     "source": "https://nes-open-db.github.io/roms/melojellos2/",
-    "sha1": "699f27acff372cf2f8506b4fccd18566d693bace"
+    "sha1": "699f27acff372cf2f8506b4fccd18566d693bace",
+    "id": "melo-jellos-2"
+  },
+  {
+    "id": "hangar",
+    "title": "Hangar",
+    "url": "/roms/hangar-ntsc-644d047c.nes",
+    "author": "DrCBeatz",
+    "source": "https://github.com/DrCBeatz/nes-hangar",
+    "license": "Code: MIT. ROM includes E1M1-derived map data and reference-based artwork; see source provenance.",
+    "provenance": "https://github.com/DrCBeatz/nes-hangar/blob/main/docs/PROVENANCE.md",
+    "sha256": "644d047c07fe9ade8c14b87c42faa5720b026e0a13c017c4326be604adebbc87",
+    "region": "NTSC"
   }
 ]

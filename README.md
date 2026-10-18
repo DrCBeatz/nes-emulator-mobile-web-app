@@ -8,7 +8,7 @@ Live site: [https://8bitpocket.app](https://8bitpocket.app)
 
 ## Try It
 
-Open [8bitpocket.app](https://8bitpocket.app), choose **Melo-Jellos 2** from **Hosted ROMs**, then press **Start**. You can also use **Open ROM** to load a local `.nes` file from your device; local ROM files stay in the browser and are not uploaded.
+Try [Hangar — an NES FPS prototype](https://8bitpocket.app/?game=hangar): click **Play Hangar**, then press **Start** on the game’s title screen. Alternatively, choose **Hangar** or **Melo-Jellos 2** from **Hosted ROMs**, or use **Open ROM** to load a local `.nes` file from your device; local ROM files stay in the browser and are not uploaded.
 
 ## Technical Highlights
 
@@ -23,7 +23,8 @@ Open [8bitpocket.app](https://8bitpocket.app), choose **Melo-Jellos 2** from **H
 
 - Browser-based NES hardware emulation with JSNES
 - Local ROM loading from the user's device
-- Optional hosted ROM picker via `public/roms/manifest.json`
+- Hosted ROM picker via `public/roms/manifest.json`
+- Direct game links such as `?game=hangar`, with a Play button for audio startup
 - Touch controls modeled after an NES controller
 - Turbo A and Turbo B controls for casual mobile play
 - Authentic mono audio mix, matching the original NES output
@@ -50,7 +51,7 @@ The app has no backend. User-selected ROM files are read locally by the browser 
 
 ## ROMs
 
-This repository includes one redistributable homebrew demo ROM, **Melo-Jellos 2**, for the hosted ROM picker. It is licensed separately from the app under CC-BY-SA 4.0. See `THIRD_PARTY_ROMS.md` for attribution, source, license, and checksum details.
+The hosted picker includes **Melo-Jellos 2** and **Hangar**, a custom NTSC NES FPS prototype with a simplified adaptation of Doom’s E1M1. ROM content is separate from the emulator application’s MIT license. Melo-Jellos 2 uses CC-BY-SA 4.0; Hangar grants MIT for its original code and documents its adapted map and artwork separately. See [THIRD_PARTY_ROMS.md](THIRD_PARTY_ROMS.md) for attribution, scope and checksums.
 
 For any other games, use public-domain, homebrew, or otherwise legally licensed ROM files.
 
@@ -61,6 +62,7 @@ To provide additional hosted ROMs, place licensed ROM files in `public/roms/` an
 ```json
 [
   {
+    "id": "example",
     "title": "Example Homebrew",
     "url": "/roms/example.nes",
     "author": "Example Author",
@@ -69,6 +71,8 @@ To provide additional hosted ROMs, place licensed ROM files in `public/roms/` an
   }
 ]
 ```
+
+Each entry needs a unique `id`, which enables `?game=example`. The URL resolves only an ID from this manifest, never an arbitrary ROM URL. The landing prompt waits for a player gesture before starting; normal file loading and the hosted picker remain available for unrecognized IDs.
 
 ROM files are ignored by default. Add narrow `.gitignore` exceptions only for ROMs that you intentionally want to commit and are confident you can redistribute.
 
@@ -90,6 +94,14 @@ npm run dev
 ```
 
 Open the local URL shown by Vite, then use **Open ROM** to load a `.nes` file from your device.
+
+## Hangar verification
+
+```sh
+npm test
+```
+
+This checks game-link resolution and asynchronous loading, then runs the bundled Hangar ROM through the pinned JSNES core in Node. It checks cartridge identity, title/start behavior and gameplay with controller input. It does not substitute for browser audio, touch input or real-device performance checks. The Hangar source and ca65/Python build live in [nes-hangar](https://github.com/DrCBeatz/nes-hangar); this app serves a versioned copy of that release.
 
 ## Build
 
