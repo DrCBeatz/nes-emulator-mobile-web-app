@@ -8,12 +8,13 @@ import { NES, Controller } from "jsnes";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const releaseSha256 =
-  "08ba1092db774a1c543345274f0835c8ca2413a725484a870286a746fa9c2462";
+  "277422aa65613d5f1a581fece1e398c161948d473741b0aa2b47b2d11113e4a2";
 const coreCommit = "5b27c4243f1cb2528c54941e13c29c4ced7d5a45";
 
 // Read-only symbols from this exact Hangar release's linker output. The ROM
 // checksum is checked before using them; a different release needs a reviewed
-// symbol update. No game RAM, CPU state, save state or PPU state is injected.
+// symbol update. Reviewed against the third-encounter release: all addresses
+// remain unchanged. No game RAM, CPU state, save state or PPU state is injected.
 const address = {
   title: 1959, publication: 40, clockFrames: 1947, clockSeconds: 1948,
   clockMinutes: 1949, paused: 1953, cueTimer: 1957, angle: 0,
@@ -263,14 +264,29 @@ test("hosted Hangar boots and plays in the pinned JSNES core", { timeout: 120_00
   step(["a"]);
   assert.equal(byte("door"), 1, "Fresh A requests the door");
   until("door actually opens", () => byte("door") === 2 && byte("visibleDoor") === 1, ["up"]);
-  for (const [x, z] of [[296, 116], [296, 92], [296, 60], [296, 44], [296, 28], [293, 33]]) walk(x, z);
+  walk(296, 112);
+  assert.equal(byte("activeEncounter"), 2, "The pre-exit room selects the third soldier");
+  assert.equal(byte("enemyHp"), 3, "The third encounter has independent health");
+  until("third three-hit soldier defeat", () => byte("enemyHp") === 0, () => {
+    const names = steer(coordinate("enemyX"), coordinate("enemyZ"), false);
+    if (byte("enemyTarget") !== 0 && byte("visibleAngle") === byte("angle") &&
+        byte("visibleEnemyEpoch") === byte("enemyEpoch")) names.push("b");
+    return names;
+  }, 2400);
+  assert.equal(byte("kills"), 3);
+  assert.equal(byte("hits"), 9);
+  assert.equal(word("shots"), 12);
+  assert.equal(byte("ammo"), 4);
+  assert.ok(byte("health") > 0);
+  snapshots.thirdCombat = state();
+  for (const [x, z] of [[296, 92], [296, 60], [296, 44], [296, 28], [293, 33]]) walk(x, z);
   face(174); // Both position and angle are newly within the wider exit zone.
   run(2);
   assert.equal(byte("results"), 0);
   step(["a"]);
   assert.ok(byte("exitFlags") & 0x80);
   until("completion screen", () => byte("results") === 5, []);
-  assert.equal(byte("resultKills"), 2);
+  assert.equal(byte("resultKills"), 3);
   assert.equal(byte("resultItems"), 2);
   assert.ok(clock() > 0);
   snapshots.completion = state();
