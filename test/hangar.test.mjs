@@ -8,27 +8,61 @@ import { NES, Controller } from "jsnes";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const releaseSha256 =
-  "277422aa65613d5f1a581fece1e398c161948d473741b0aa2b47b2d11113e4a2";
+  "db258e4c9c57ff3ef9f4bc8eb732f31b65eec85a1a639e7a9787a90dde1722a9";
 const coreCommit = "5b27c4243f1cb2528c54941e13c29c4ced7d5a45";
 
 // Read-only symbols from this exact Hangar release's linker output. The ROM
 // checksum is checked before using them; a different release needs a reviewed
-// symbol update. Reviewed against the third-encounter release: all addresses
-// remain unchanged. No game RAM, CPU state, save state or PPU state is injected.
+// symbol update. Reviewed against prototype-2026-10-24-door-reach and its exact linker labels. No game RAM, CPU state, save state or PPU state is injected.
 const address = {
-  title: 1959, publication: 40, clockFrames: 1947, clockSeconds: 1948,
-  clockMinutes: 1949, paused: 1953, cueTimer: 1957, angle: 0,
-  x: 16, xHigh: 31821, z: 18, zHigh: 31822,
-  visibleAngle: 25, visibleX: 26, visibleXHigh: 31825,
-  visibleZ: 28, visibleZHigh: 31826, uploadBusy: 49,
-  health: 1984, ammo: 1985, shots: 1990, mode: 2,
-  enemyHp: 2017, hits: 2019, kills: 2020, enemyX: 240,
-  enemyXHigh: 32480, enemyZ: 242, enemyZHigh: 32481,
-  enemyEpoch: 244, visibleEnemyEpoch: 36, enemyTarget: 2022,
-  corpse: 28344, simulation: 205, enemyAttack: 251, enemyTimer: 252,
-  fireTimer: 1987, cooldown: 1986, activeEncounter: 2032,
-  pickups: 58, door: 1883, visibleDoor: 1889, results: 1952,
-  resultKills: 1950, resultItems: 1951, exitFlags: 1,
+  "title": 1959,
+  "publication": 40,
+  "clockFrames": 1947,
+  "clockSeconds": 1948,
+  "clockMinutes": 1949,
+  "paused": 1953,
+  "cueTimer": 1957,
+  "angle": 0,
+  "x": 16,
+  "xHigh": 31821,
+  "z": 18,
+  "zHigh": 31822,
+  "visibleAngle": 25,
+  "visibleX": 26,
+  "visibleXHigh": 31825,
+  "visibleZ": 28,
+  "visibleZHigh": 31826,
+  "uploadBusy": 49,
+  "health": 1984,
+  "ammo": 1985,
+  "shots": 1990,
+  "mode": 2,
+  "enemyHp": 2017,
+  "hits": 2019,
+  "kills": 2020,
+  "enemyX": 240,
+  "enemyXHigh": 32480,
+  "enemyZ": 242,
+  "enemyZHigh": 32481,
+  "enemyEpoch": 244,
+  "visibleEnemyEpoch": 36,
+  "enemyTarget": 2022,
+  "corpse": 28344,
+  "simulation": 205,
+  "enemyAttack": 251,
+  "enemyTimer": 252,
+  "fireTimer": 1987,
+  "cooldown": 1986,
+  "activeEncounter": 2032,
+  "pickups": 58,
+  "door": 1883,
+  "visibleDoor": 1889,
+  "results": 1952,
+  "resultKills": 1950,
+  "resultItems": 1951,
+  "exitFlags": 1,
+  "musicDisabled": 1551,
+  "musicActive": 1546
 };
 const button = {
   a: Controller.BUTTON_A, b: Controller.BUTTON_B,
@@ -41,7 +75,7 @@ const sha256 = (data) => createHash("sha256").update(data).digest("hex");
 // This deliberately tests the emulation core separately from the browser UI.
 // It does not certify canvas sizing, touch controls, audible browser output,
 // network races, mobile performance or pixel-perfect Mesen equivalence.
-test("hosted Hangar boots and plays in the pinned JSNES core", { timeout: 120_000 }, (t) => {
+for (const musicDisabled of [0, 1]) test(`hosted Hangar completes with music ${musicDisabled ? "OFF" : "ON"} in the pinned JSNES core`, { timeout: 120_000 }, (t) => {
   const manifest = JSON.parse(readFileSync(resolve(root, "public/roms/manifest.json")));
   const game = manifest.find((entry) => entry.id === "hangar");
   assert.ok(game, "Hosted manifest must contain a stable Hangar ID");
@@ -74,7 +108,7 @@ test("hosted Hangar boots and plays in the pinned JSNES core", { timeout: 120_00
   });
   nes.loadROM(rom.toString("latin1"));
   assert.equal(nes.rom.mapperType, 1, "MMC1");
-  assert.equal(nes.rom.romCount, 4, "64 KiB PRG ROM");
+  assert.equal(nes.rom.romCount, 8, "128 KiB PRG ROM");
   assert.equal(nes.rom.vromCount, 0, "CHR RAM rather than CHR ROM");
 
   const byte = (name) => nes.cpu.mem[address[name]];
@@ -118,19 +152,73 @@ test("hosted Hangar boots and plays in the pinned JSNES core", { timeout: 120_00
   const pictureHash = () => sha256(new Uint8Array(picture.buffer));
   const snapshots = {};
 
-  run(120, ["start"]);
-  assert.equal(byte("title"), 1, "Start already held at power-on cannot dismiss the title");
-  assert.equal(clock(), 0);
-  assert.ok(new Set(picture).size >= 3, "Title has rendered visible text/colors");
+  // Exact expected page bytes come from this release's generated build assets.
+  // Observations remain read-only; inputs use only the normal controller API.
+  const uiAssets = {
+  "logo": {
+    "nametable": "0545fb3b19e54d2479cfb705b4a06eb807a9d92a5cd87d52bf039e12fa3bd878",
+    "palette": "e99d31aed2b9debf98b29a0710b596006d437180c5c87833104261e37ba44a4b"
+  },
+  "credits": {
+    "nametable": "2c2fc8b27bd8ac1a0deb4a9176bfa4ae6e99275113d89ea3501b92ed24264e8d",
+    "palette": "3cb70dee116248a5d46d52dd4a5d162c5a6fb19f82e599b888cb40e3ea3752ed"
+  },
+  "guide": {
+    "nametable": "9f5c70ba580ea55896b2dc2fbc2712f440cf6c4c53847c9899558d31b49faee0",
+    "palette": "520abd8ba69957df4b7346d38e14a2dc0d8370d87210d010c7779c65e58ebfef"
+  }
+};
+  const ppu = (a, size) => Buffer.from(Array.from({ length: size }, (_, i) => nes.ppu.mirroredLoad(a + i)));
+  const expectPage = (name) => {
+    assert.equal(sha256(ppu(0x2000, 1024)), uiAssets[name].nametable);
+    assert.equal(sha256(ppu(0x3f00, 32)), uiAssets[name].palette);
+    assert.equal(byte("title"), 1);
+    assert.equal(clock(), 0);
+    assert.equal(byte("musicActive"), 0);
+  };
+  run(120, ["start", "select"]);
+  expectPage("logo");
   const titlePicture = pictureHash();
-  run(30, ["a", "b", "up", "right", "select"]);
-  assert.equal(byte("title"), 1);
-  assert.equal(clock(), 0);
-  assert.equal(pictureHash(), titlePicture, "Other title inputs leave its image unchanged");
+  run(30, ["a", "b", "up", "right"]);
+  assert.equal(pictureHash(), titlePicture, "Unrelated inputs leave the logo unchanged");
+  run(2);
+  run(90, ["select", "b"]);
+  expectPage("credits");
+  const creditsPicture = pictureHash();
+  run(30, ["select", "b"]);
+  assert.equal(pictureHash(), creditsPicture, "Held B cannot immediately close credits");
+  run(2);
+  run(90, ["b", "select"]);
+  expectPage("logo");
+  assert.equal(pictureHash(), titlePicture, "B restores the exact logo; held Select cannot reopen");
+  run(2);
+  if (musicDisabled) {
+    run(90, ["start", "select"]); // Start wins when both buttons are fresh.
+  } else {
+    run(90, ["select"]);
+    expectPage("credits");
+    run(2);
+    run(90, ["start"]); // Credits can continue directly to the guide.
+  }
+  expectPage("guide");
+  run(30, ["start", "left"]);
+  assert.equal(byte("title"), 1, "Held Start cannot skip the guide");
+  run(2);
+  run(30, ["left"]);
+  assert.equal(byte("musicDisabled"), 1);
+  run(2);
+  run(30, ["right"]);
+  assert.equal(byte("musicDisabled"), 0);
+  expectPage("guide");
+  run(2);
+  run(30, ["left", "right"]);
+  assert.equal(byte("musicDisabled"), 0, "Conflicting music choices preserve selection");
+  run(2);
+  if (musicDisabled) run(2, ["left"]);
   run(2);
   const launchFrame = frame;
   until("first playable picture", () => byte("title") === 0 && byte("publication") === 1,
-    ["start", "up", "right", "b", "select"], 300);
+    ["start", "up", musicDisabled ? "left" : "right", "b", "select"], 300);
   const firstPictureFrame = frame;
   assert.equal(clock(), 0, "Title and first-picture preparation do not count as play time");
   assert.equal(coordinate("x"), 52 * 256);
@@ -140,7 +228,12 @@ test("hosted Hangar boots and plays in the pinned JSNES core", { timeout: 120_00
   assert.equal(byte("ammo"), 6);
   assert.equal(word("shots"), 0);
   assert.equal(byte("mode"), 0, "Loading discards Select as well as movement/fire");
+  assert.equal(byte("musicDisabled"), musicDisabled);
+  for (const base of [0x2000, 0x2400]) for (const field of [{"offset": 728, "tiles": [37, 19, 15, 30, 29, 28]}, {"offset": 760, "tiles": [30, 23, 33, 34, 29, 26]}]) {
+    assert.deepEqual([...ppu(base + field.offset, field.tiles.length)], field.tiles);
+  }
   run(60, ["start"]);
+  assert.equal(byte("musicActive"), musicDisabled ? 0 : 1);
   assert.equal(byte("paused"), 0);
   assert.equal(clock(), 60);
   assert.notEqual(pictureHash(), titlePicture, "World picture replaces the title");
@@ -240,7 +333,7 @@ test("hosted Hangar boots and plays in the pinned JSNES core", { timeout: 120_00
   walk(144, 344);
   assert.ok(byte("pickups") & 0x80, "Medkit collected while injured");
   assert.equal(byte("health"), 100);
-  for (const [x, z] of [[144, 296], [228, 296], [244, 296], [264, 290], [288, 272], [290, 256], [274, 252]]) walk(x, z);
+  for (const [x, z] of [[144, 296], [228, 296], [244, 296], [264, 290], [288, 272], [290, 256], [282, 250]]) walk(x, z);
   assert.equal(byte("activeEncounter"), 1);
   assert.ok(byte("pickups") & 0x40, "The tighter clip can be collected from the dry entrance");
   assert.equal(byte("ammo"), 10, "Zero ammunition is replenished before the second fight");
@@ -299,11 +392,13 @@ test("hosted Hangar boots and plays in the pinned JSNES core", { timeout: 120_00
   assert.equal(byte("kills"), 0);
   assert.equal(byte("pickups"), 0);
   assert.equal(byte("door"), 0);
+  assert.equal(byte("musicDisabled"), musicDisabled, "Restart retains the chosen music option");
+  assert.equal(byte("musicActive"), musicDisabled ? 0 : 1);
   snapshots.restart = state();
   assert.ok(generatedPictures >= frame - 2);
   assert.ok(audioSamples > 0 && nonzeroAudioSamples > 0);
   t.diagnostic(JSON.stringify({
-    romSha256: releaseSha256, jsnesCommit: coreCommit, frames: frame,
+    romSha256: releaseSha256, jsnesCommit: coreCommit, frames: frame, music: musicDisabled ? "OFF" : "ON",
     launchToFirstPictureFrames: firstPictureFrame - launchFrame,
     mapper: "MMC1", chr: "RAM", generatedPictures, audioSamples,
     controllerOnly: true, stockTiming: true, snapshots,

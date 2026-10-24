@@ -36,8 +36,9 @@ app.innerHTML = `
             <div><dt><kbd>X</kbd> + <kbd>←</kbd> / <kbd>→</kbd></dt><dd>Strafe left / right</dd></div>
             <div><dt><kbd>Z</kbd> or <kbd>Y</kbd> <span>(B)</span></dt><dd>Fire</dd></div>
             <div><dt><kbd>Enter</kbd> <span>(Start)</span></dt><dd>Begin / pause game</dd></div>
-            <div><dt><kbd>Ctrl</kbd> <span>(Select)</span></dt><dd>Toggle edge comparison</dd></div>
+            <div><dt><kbd>Ctrl</kbd> <span>(Select)</span></dt><dd>Credits at logo / edge comparison in game</dd></div>
           </dl>
+          <p class="controls-note">Press Start at the logo, then choose music on the guide: left for OFF (faster gameplay), right for ON. Press Start again to play.</p>
           <p class="controls-note">On touchscreens, use the NES buttons below. Hold A with left / right to strafe.</p>
         </section>
       </div>

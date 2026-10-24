@@ -8,7 +8,7 @@ Live site: [https://8bitpocket.app](https://8bitpocket.app)
 
 ## Try It
 
-Try [Hangar — an NES FPS prototype](https://8bitpocket.app/?game=hangar): read the keyboard guide, click **Play Hangar**, then press **Enter** or the on-screen **Start** button on the game’s title screen. Alternatively, choose **Hangar** or **Melo-Jellos 2** from **Hosted ROMs**, or use **Open ROM** to load a local `.nes` file from your device; local ROM files stay in the browser and are not uploaded.
+Try [Hangar — an NES FPS prototype](https://8bitpocket.app/?game=hangar): read the keyboard guide, click **Play Hangar**, then press **Enter** or the on-screen **Start** button at the logo to reach the controls guide. On the guide, choose music with **Left** (off, faster gameplay) or **Right** (on), then press **Start** again. **Select** at the logo opens credits; **B** returns. Alternatively, choose **Hangar** or **Melo-Jellos 2** from **Hosted ROMs**, or use **Open ROM** to load a local `.nes` file from your device; local ROM files stay in the browser and are not uploaded.
 
 ## Hangar keyboard controls
 
@@ -25,7 +25,7 @@ beforehand.
 | X | Use a nearby door or exit switch (NES A) |
 | Z or Y | Fire (NES B) |
 | Enter | Begin, pause/resume, retry (Start) |
-| Ctrl | Toggle the edge-rendering comparison (Select) |
+| Ctrl | Credits at logo; edge-rendering comparison in game (Select) |
 
 Saved custom JSNES keyboard bindings can differ; this guide does not replace
 them. Touchscreen players can use the NES controller below the game.
@@ -72,7 +72,7 @@ The app has no backend. User-selected ROM files are read locally by the browser 
 
 ## ROMs
 
-The hosted picker includes **Melo-Jellos 2** and **Hangar**, a custom NTSC NES FPS prototype with a simplified adaptation of Doom’s E1M1. ROM content is separate from the emulator application’s MIT license. Melo-Jellos 2 uses CC-BY-SA 4.0; Hangar grants MIT for its original code and documents its adapted map and artwork separately. See [THIRD_PARTY_ROMS.md](THIRD_PARTY_ROMS.md) for attribution, scope and checksums.
+The hosted picker includes **Melo-Jellos 2** and **Hangar**, a custom NTSC NES FPS prototype with a simplified adaptation of Doom’s E1M1. ROM content is separate from the emulator application’s MIT license. Melo-Jellos 2 uses CC-BY-SA 4.0; Hangar grants MIT for its original code and documents its adapted map, artwork and underlying music composition separately; the optional Bobby Prince cover is arranged for NES by Dr C Beatz. See [THIRD_PARTY_ROMS.md](THIRD_PARTY_ROMS.md) for attribution, scope and checksums.
 
 For any other games, use public-domain, homebrew, or otherwise legally licensed ROM files.
 
@@ -122,7 +122,7 @@ Open the local URL shown by Vite, then use **Open ROM** to load a `.nes` file fr
 npm test
 ```
 
-This checks game-link resolution and asynchronous loading, then runs the bundled Hangar ROM through the pinned JSNES core in Node. It checks cartridge identity, title/start behavior and gameplay with controller input. It does not substitute for browser audio, touch input or real-device performance checks. The Hangar source and ca65/Python build live in [nes-hangar](https://github.com/DrCBeatz/nes-hangar); this app serves a versioned copy of that release.
+This checks game-link resolution and asynchronous loading, then runs the bundled Hangar ROM through the pinned JSNES core in Node. It checks cartridge identity, logo/credits navigation, both music choices, pause/resume, three encounters, pickups, door, exit and restart with controller input. It does not substitute for browser audio, touch input or real-device performance checks. The Hangar source and ca65/Python build live in [nes-hangar](https://github.com/DrCBeatz/nes-hangar); this app serves a versioned copy of that release.
 
 ## Build
 

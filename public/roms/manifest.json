@@ -15,12 +15,13 @@
   {
     "id": "hangar",
     "title": "Hangar",
-    "url": "/roms/hangar-ntsc-277422aa.nes",
-    "author": "DrCBeatz",
+    "url": "/roms/hangar-ntsc-db258e4c.nes",
+    "author": "Dr C Beatz",
     "source": "https://github.com/DrCBeatz/nes-hangar",
-    "license": "Code: MIT. ROM includes E1M1-derived map data and reference-based artwork; see source provenance.",
+    "license": "Original code: MIT; FamiStudio: separate permissive notice. Adapted map, artwork and Bobby Prince composition have separate provenance; see source license scope.",
     "provenance": "https://github.com/DrCBeatz/nes-hangar/blob/main/docs/PROVENANCE.md",
-    "sha256": "277422aa65613d5f1a581fece1e398c161948d473741b0aa2b47b2d11113e4a2",
-    "region": "NTSC"
+    "sha256": "db258e4c9c57ff3ef9f4bc8eb732f31b65eec85a1a639e7a9787a90dde1722a9",
+    "region": "NTSC",
+    "version": "prototype-2026-10-24-door-reach"
   }
 ]
