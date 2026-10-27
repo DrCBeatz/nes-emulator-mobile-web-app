@@ -20,9 +20,9 @@ The ROM is redistributed unmodified as a playable demo for 8-Bit Pocket.
 
 - Author: Dr C Beatz and contributors
 - Source: https://github.com/DrCBeatz/nes-hangar
-- Release: `prototype-2026-10-24-door-reach` (NTSC, MMC1)
-- Local path: `public/roms/hangar-ntsc-db258e4c.nes`
-- SHA-256: `db258e4c9c57ff3ef9f4bc8eb732f31b65eec85a1a639e7a9787a90dde1722a9`
+- Release: `v0.2.0 — Performance Update` (NTSC, MMC1)
+- Local path: `public/roms/hangar-ntsc-c100366f.nes`
+- SHA-256: `c100366ffc5b86e68ff441f2a2bd8d624a7c6f1e8d966c226f1894eeedd20977`
 - Original engine, gameplay code and build tools: MIT
 - Audio engine: FamiStudio by Mathieu Gauthier, based on FamiTone2 by Shiru; a separate permissive notice is retained in the [source distribution](https://github.com/DrCBeatz/nes-hangar/tree/main/vendor/famistudio).
 - Optional music: “At Doom’s Gate,” composed by Bobby Prince; NES arrangement by Dr C Beatz. The arrangement is not a new original composition.

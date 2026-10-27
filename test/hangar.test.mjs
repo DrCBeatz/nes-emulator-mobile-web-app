@@ -8,12 +8,12 @@ import { NES, Controller } from "jsnes";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const releaseSha256 =
-  "db258e4c9c57ff3ef9f4bc8eb732f31b65eec85a1a639e7a9787a90dde1722a9";
+  "c100366ffc5b86e68ff441f2a2bd8d624a7c6f1e8d966c226f1894eeedd20977";
 const coreCommit = "5b27c4243f1cb2528c54941e13c29c4ced7d5a45";
 
 // Read-only symbols from this exact Hangar release's linker output. The ROM
 // checksum is checked before using them; a different release needs a reviewed
-// symbol update. Reviewed against prototype-2026-10-24-door-reach and its exact linker labels. No game RAM, CPU state, save state or PPU state is injected.
+// symbol update. Reviewed against v0.2.0 and its exact linker labels. No game RAM, CPU state, save state or PPU state is injected.
 const address = {
   "title": 1959,
   "publication": 40,
@@ -85,7 +85,8 @@ for (const musicDisabled of [0, 1]) test(`hosted Hangar completes with music ${m
   assert.ok(romPath.startsWith(publicRoot + sep));
   const rom = readFileSync(romPath);
   assert.equal(sha256(rom), releaseSha256, "ROM and read-only symbol map must match");
-  if (game.sha256) assert.equal(game.sha256, releaseSha256);
+  assert.equal(game.sha256, releaseSha256);
+  assert.equal(game.version, "v0.2.0");
   const pkg = JSON.parse(readFileSync(resolve(root, "package.json")));
   assert.equal(pkg.dependencies.jsnes, `github:taiyuuki/jsnes#${coreCommit}`);
 
@@ -156,7 +157,7 @@ for (const musicDisabled of [0, 1]) test(`hosted Hangar completes with music ${m
   // Observations remain read-only; inputs use only the normal controller API.
   const uiAssets = {
   "logo": {
-    "nametable": "0545fb3b19e54d2479cfb705b4a06eb807a9d92a5cd87d52bf039e12fa3bd878",
+    "nametable": "845760d6b4fdd2616c3029bffa803b35a8f9f8b0e6dac3f674ac63c4d42e0fd1",
     "palette": "e99d31aed2b9debf98b29a0710b596006d437180c5c87833104261e37ba44a4b"
   },
   "credits": {

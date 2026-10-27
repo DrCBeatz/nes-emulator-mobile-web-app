@@ -10,6 +10,8 @@ Live site: [https://8bitpocket.app](https://8bitpocket.app)
 
 Try [Hangar — an NES FPS prototype](https://8bitpocket.app/?game=hangar): read the keyboard guide, click **Play Hangar**, then press **Enter** or the on-screen **Start** button at the logo to reach the controls guide. On the guide, choose music with **Left** (off, faster gameplay) or **Right** (on), then press **Start** again. **Select** at the logo opens credits; **B** returns. Alternatively, choose **Hangar** or **Melo-Jellos 2** from **Hosted ROMs**, or use **Open ROM** to load a local `.nes` file from your device; local ROM files stay in the browser and are not uploaded.
 
+The hosted Hangar build is **v0.2.0 — Performance Update**. It includes faster rendering and improved turning/stopping response, distant-soldier floor alignment, and the final-door encounter visibility fix. The title displays **PROTOTYPE 0.2.0**; the level, resolution, soundtrack and controls are unchanged.
+
 ## Hangar keyboard controls
 
 The guide appears before Play when opening Hangar’s link or choosing Hangar
