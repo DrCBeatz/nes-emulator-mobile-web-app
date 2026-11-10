@@ -103,6 +103,18 @@ ROM files are ignored by default. Add narrow `.gitignore` exceptions only for RO
 
 8-Bit Pocket currently pins JSNES to `taiyuuki/jsnes` commit `5b27c4243f1cb2528c54941e13c29c4ced7d5a45`, which includes sprite rendering fixes from [bfirsh/jsnes#666](https://github.com/bfirsh/jsnes/pull/666). The fork is pinned to a specific commit so emulator behavior does not change unexpectedly when new commits land on the fork.
 
+The application applies an MMC1 PRG banking correction from `src/mmc1-prg.js`
+after loading local or hosted cartridges. It corrects 32 KiB bank selection,
+immediate control-mode remapping, and serial-register resets for standard
+MMC1 boards with up to 256 KiB PRG ROM. This supports the two-mission
+Cyber-Furry Hunter 3D prototype. The correction also follows mapper recreation
+during reset and save-state restoration. Extended MMC1 boards above 256 KiB
+continue through the pinned core's existing implementation.
+
+The correction is maintained in the application source and included by Vite.
+An ordinary dependency installation retains it. Its scope is PRG banking.
+CHR banking, RAM access and other mapper behaviour use the pinned core.
+
 ## Known Limitations
 
 8-Bit Pocket uses JSNES directly rather than a heavier accuracy-focused emulator core. Many games run well, especially with the pinned JSNES fork noted above, but some ROMs may still show minor rendering artifacts or other compatibility issues. The goal of this project is a lightweight, mobile-friendly static web emulator for casual play, not cycle-perfect NES emulation.
@@ -124,7 +136,7 @@ Open the local URL shown by Vite, then use **Open ROM** to load a `.nes` file fr
 npm test
 ```
 
-This checks game-link resolution and asynchronous loading, then runs the bundled Hangar ROM through the pinned JSNES core in Node. It checks cartridge identity, logo/credits navigation, both music choices, pause/resume, three encounters, pickups, door, exit and restart with controller input. It does not substitute for browser audio, touch input or real-device performance checks. The Hangar source and ca65/Python build live in [nes-hangar](https://github.com/DrCBeatz/nes-hangar); this app serves a versioned copy of that release.
+This checks game-link resolution and asynchronous loading, then runs the bundled Hangar ROM through the pinned JSNES core with the application's MMC1 correction in Node. It checks cartridge identity, logo/credits navigation, both music choices, pause/resume, three encounters, pickups, door, exit and restart with controller input. Generated MMC1 cartridges cover every PRG register value in all four modes, control changes, serial resets, save-state restoration and real local/hosted application loading. Browser audio, touch input and real-device performance receive separate manual checks. The Hangar source and ca65/Python build live in [nes-hangar](https://github.com/DrCBeatz/nes-hangar); this app serves a versioned copy of that release.
 
 ## Build
 

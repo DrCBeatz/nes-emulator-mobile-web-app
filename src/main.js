@@ -1,4 +1,5 @@
 import { Browser, Controller } from "jsnes";
+import { installMmc1PrgCorrection } from "./mmc1-prg.js";
 import "./styles.css";
 
 const app = document.querySelector("#app");
@@ -318,6 +319,7 @@ function loadRomData(data, name, sequence) {
   // Browser.loadROM would close the AudioContext unlocked by the gesture.
   // Its frame timer is already stopped; load the core, then reuse the audio.
   emulator.nes.loadROM(data);
+  installMmc1PrgCorrection(emulator.nes);
   // Original NES audio is mono; JSNES defaults to decorative stereo panning.
   emulator.nes.papu.setPanning([128, 128, 128, 128, 128]);
   running = true;

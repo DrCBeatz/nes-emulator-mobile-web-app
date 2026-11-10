@@ -2,6 +2,9 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import test from "node:test";
 import vm from "node:vm";
+import { NES } from "jsnes";
+import { installMmc1PrgCorrection } from "../src/mmc1-prg.js";
+import { cartridge, serial, bankPair } from "./support/mmc1-rom.mjs";
 
 // Exercise the real application handlers with deterministic DOM/network/audio
 // boundaries. No emulator frames or browser automation run in these tests.
@@ -34,7 +37,7 @@ class Element {
   appendChild(child) { this.children.push(child); }
   dispatch(event) { this.listeners.get(event)?.({ preventDefault() {} }); }
 }
-function app(search = "", { delayedAudio = false, constructorError = false } = {}) {
+function app(search = "", { delayedAudio = false, constructorError = false, realCore = false } = {}) {
   const ids = ["app", "nes-screen", "rom-file", "hosted-roms", "pause-button", "status", "dpad", "launch-game", "controls-button", "hangar-controls"];
   const elements = new Map(ids.map((id) => [id, new Element()]));
   elements.get("launch-game").hidden = true;
@@ -81,6 +84,7 @@ function app(search = "", { delayedAudio = false, constructorError = false } = {
         opts: {}, papu: { setPanning() {}, setFrameRate() {} },
         buttonDown() {}, buttonUp: (_player, button) => this.buttonUps.push(button),
       };
+      if (realCore) this.nes = new NES({ emulateSound: false });
     }
     loadROM() { throw new Error("Browser.loadROM would discard the primed context"); }
     start() { this._speakers.start(); }
@@ -100,6 +104,7 @@ function app(search = "", { delayedAudio = false, constructorError = false } = {
     Browser, Controller: Object.fromEntries(["A", "B", "SELECT", "START", "UP", "DOWN", "LEFT", "RIGHT", "TURBO_A", "TURBO_B"].map((name, index) => ["BUTTON_" + name, index])), document,
     window: { location: { search }, addEventListener() {} },
     URLSearchParams, Uint8Array, AbortController, console, setTimeout,
+    installMmc1PrgCorrection,
     requestAnimationFrame(callback) { callback(); },
     fetch(url, options) {
       const result = deferred();
@@ -121,6 +126,22 @@ function app(search = "", { delayedAudio = false, constructorError = false } = {
     },
   };
 }
+
+test("local and hosted application loads install MMC1 banking before playback", async () => {
+  for (const local of [true, false]) {
+    const page = app("", { realCore: true });
+    page.manifest(); await tick();
+    if (local) page.file(Promise.resolve(bytes(cartridge())));
+    else { page.choose("melo-jellos-2"); page.rom(1, cartridge()); }
+    await tick();
+    const nes = page.instances[0].nes;
+    serial(nes.mmap, 0x8000, 3);
+    serial(nes.mmap, 0xe000, 4);
+    assert.deepEqual(bankPair(nes), [4, 5]);
+    serial(nes.mmap, 0x8000, 15);
+    assert.deepEqual(bankPair(nes), [4, 7]);
+  }
+});
 
 test("deep link waits for Play, unlocks audio before fetch, and ignores duplicate clicks", async () => {
   const page = app("?game=hangar", { delayedAudio: true });

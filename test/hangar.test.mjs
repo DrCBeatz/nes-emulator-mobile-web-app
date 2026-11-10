@@ -5,6 +5,7 @@ import { createHash } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { resolve, sep } from "node:path";
 import { NES, Controller } from "jsnes";
+import { installMmc1PrgCorrection } from "../src/mmc1-prg.js";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const releaseSha256 =
@@ -108,6 +109,7 @@ for (const musicDisabled of [0, 1]) test(`hosted Hangar completes with music ${m
     },
   });
   nes.loadROM(rom.toString("latin1"));
+  installMmc1PrgCorrection(nes);
   assert.equal(nes.rom.mapperType, 1, "MMC1");
   assert.equal(nes.rom.romCount, 8, "128 KiB PRG ROM");
   assert.equal(nes.rom.vromCount, 0, "CHR RAM rather than CHR ROM");
