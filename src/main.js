@@ -216,11 +216,11 @@ async function loadRomFromFile(file) {
 
   try {
     request = beginRomLoad(file.name);
-    const [buffer] = await Promise.all([file.arrayBuffer(), request.audioReady]);
+    const buffer = await file.arrayBuffer();
     if (request.sequence !== loadSequence) return;
     loadRomData(bytesToBinaryString(buffer), file.name, request.sequence);
   } catch (error) {
-    await failRomLoad(request, error);
+    failRomLoad(request, error);
   }
 }
 
@@ -277,8 +277,10 @@ function beginRomLoad(name, gameId = null) {
   audioSampleRate = null;
   pauseButton.disabled = true;
   setStatus(`Loading ${name}...`);
-  const audioReady = ensureEmulator()._speakers.start();
-  return { sequence, audioReady };
+  // Prime sound during the gesture, but never make cartridge loading depend
+  // on AudioWorklet initialization. JSNES safely drops samples until ready.
+  ensureEmulator()._speakers.start();
+  return { sequence };
 }
 
 async function loadHostedRom(rom) {
@@ -290,20 +292,19 @@ async function loadHostedRom(rom) {
     pendingFetch = controller;
     const response = await fetch(rom.url, { signal: controller.signal });
     if (!response.ok) throw new Error(`Could not load ${rom.title} (${response.status}).`);
-    const [buffer] = await Promise.all([response.arrayBuffer(), request.audioReady]);
+    const buffer = await response.arrayBuffer();
     if (request.sequence !== loadSequence) return;
     pendingFetch = null;
     loadRomData(bytesToBinaryString(buffer), rom.title, request.sequence);
   } catch (error) {
-    await failRomLoad(request, error);
+    failRomLoad(request, error);
   }
 }
 
-async function failRomLoad(request, error) {
-  // Wait before stopping speakers: the upstream worklet setup still uses
-  // its context after its asynchronous addModule call.
+function failRomLoad(request, error) {
+  // Report cartridge/network failures immediately. The guarded speaker stop
+  // defers context disposal if the worklet is still initializing.
   const sequence = request?.sequence ?? loadSequence;
-  await request?.audioReady;
   if (sequence !== loadSequence) return;
   pendingFetch = null;
   loading = false;

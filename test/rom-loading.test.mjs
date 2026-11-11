@@ -7,7 +7,7 @@ import { installMmc1PrgCorrection } from "../src/mmc1-prg.js";
 import { cartridge, serial, bankPair } from "./support/mmc1-rom.mjs";
 
 // Exercise the real application handlers with deterministic DOM/network/audio
-// boundaries. No emulator frames or browser automation run in these tests.
+// boundaries. Diagnostic cartridges also exercise the real core and mapper.
 const source = fs.readFileSync(new URL("../src/main.js", import.meta.url), "utf8")
   .replace(/^import .*;\n/gm, "");
 const manifest = [
@@ -143,6 +143,116 @@ test("local and hosted application loads install MMC1 banking before playback", 
   }
 });
 
+test("local and hosted 256 KiB MMC1 games run even when audio startup never settles", async () => {
+  for (const local of [true, false]) {
+    const page = app("", { realCore: true, delayedAudio: true });
+    page.manifest(); await tick();
+    const rom = cartridge({ banks: 16 });
+    if (local) page.file(Promise.resolve(bytes(rom)));
+    else { page.choose("melo-jellos-2"); page.rom(1, rom); }
+    await tick();
+    const instance = page.instances[0];
+    assert.equal(instance.nes.rom.romCount, 16);
+    serial(instance.nes.mmap, 0x8000, 3);
+    serial(instance.nes.mmap, 0xe000, 12);
+    assert.deepEqual(bankPair(instance.nes), [12, 13]);
+    serial(instance.nes.mmap, 0x8000, 15);
+    assert.deepEqual(bankPair(instance.nes), [12, 15]);
+    let rendered = 0;
+    instance.nes.ui.writeFrame = () => rendered++;
+    instance.nes.frame(); instance.nes.frame();
+    assert.equal(rendered, 2);
+    assert.equal(instance.audioStarts, 1);
+    assert.equal(page.elements.get("pause-button").disabled, false);
+    assert.match(page.elements.get("status").textContent, /^Playing /);
+  }
+});
+
+test("file, network and cartridge errors are reported while audio remains pending", async () => {
+  for (const failure of ["file", "network", "cartridge"]) {
+    const page = app("", { delayedAudio: true });
+    page.manifest(); await tick();
+    if (failure === "file") page.file(Promise.reject(new Error("File read failed")));
+    else if (failure === "network") {
+      page.choose("melo-jellos-2");
+      page.requests[1].reject(new Error("Network failed"));
+    } else page.file(Promise.resolve(bytes("BAD")));
+    await tick();
+    const instance = page.instances[0];
+    assert.match(page.elements.get("status").textContent, /File read failed|Network failed|Invalid NES cartridge/);
+    assert.equal(page.elements.get("status").dataset.tone, "error");
+    assert.equal(page.elements.get("pause-button").disabled, true);
+    assert.equal(instance.audioStops, 0, "pending worklet still owns its context");
+    instance._speakers.onBufferUnderrun();
+    instance._frameTimer.onGenerateFrame();
+    assert.equal(page.frames(), 0);
+    const status = page.elements.get("status").textContent;
+    page.audio.resolve(); await tick();
+    assert.equal(instance._speakers.audioCtx, null);
+    assert.equal(page.elements.get("status").textContent, status);
+  }
+});
+
+test("a new cartridge recovers immediately from an error while reusing pending audio", async () => {
+  const page = app("", { delayedAudio: true });
+  page.manifest(); await tick();
+  page.file(Promise.resolve(bytes("BAD"))); await tick();
+  assert.match(page.elements.get("status").textContent, /Invalid NES cartridge/);
+  const instance = page.instances[0];
+  const context = instance._speakers.audioCtx;
+  page.file(Promise.resolve(bytes("RECOVERED")), "recovered.nes"); await tick();
+  assert.deepEqual(instance.loads, ["RECOVERED"]);
+  assert.equal(instance.audioStarts, 1);
+  page.audio.resolve(); await tick();
+  assert.equal(instance._speakers.audioCtx, context);
+  assert.match(page.elements.get("status").textContent, /^Playing recovered.nes/);
+});
+
+test("late audio success or failure preserves the newest cartridge and frame state", async () => {
+  for (const rejectAudio of [false, true]) {
+    const page = app("", { delayedAudio: true });
+    page.manifest(); await tick();
+    page.file(Promise.resolve(bytes("FIRST")), "first.nes"); await tick();
+    page.choose("melo-jellos-2"); page.rom(1, "SECOND"); await tick();
+    const instance = page.instances[0];
+    assert.deepEqual(instance.loads, ["FIRST", "SECOND"]);
+    assert.equal(instance.audioStarts, 1);
+    if (rejectAudio) page.audio.reject(new Error("AudioWorklet unavailable"));
+    else page.audio.resolve();
+    await tick();
+    assert.match(page.elements.get("status").textContent, /^Playing Melo-Jellos 2/);
+    if (rejectAudio) assert.match(page.elements.get("status").textContent, /audio unavailable/);
+    instance._frameTimer.onGenerateFrame();
+    assert.equal(page.frames(), 1);
+    assert.deepEqual(instance.loads, ["FIRST", "SECOND"]);
+  }
+});
+
+test("Pause before initial audio completes remains paused after late success or failure", async () => {
+  for (const rejectAudio of [false, true]) {
+    const page = app("", { delayedAudio: true });
+    page.manifest(); await tick();
+    page.file(Promise.resolve(bytes("LOCAL"))); await tick();
+    const instance = page.instances[0];
+    page.elements.get("pause-button").dispatch("click");
+    assert.equal(instance.audioStops, 0);
+    if (rejectAudio) page.audio.reject(new Error("AudioWorklet unavailable"));
+    else page.audio.resolve();
+    await tick();
+    assert.equal(instance._speakers.audioCtx, null);
+    assert.match(page.elements.get("status").textContent, /^Paused local.nes/);
+    assert.equal(page.elements.get("pause-button").textContent, "Resume");
+    instance._speakers.onBufferUnderrun();
+    instance._frameTimer.onGenerateFrame();
+    assert.equal(page.frames(), 0);
+    page.elements.get("pause-button").dispatch("click");
+    if (!rejectAudio) { page.audioStarts[1].resolve(); await tick(); }
+    instance._frameTimer.onGenerateFrame();
+    assert.equal(page.frames(), 1);
+    assert.match(page.elements.get("status").textContent, /^Playing local.nes/);
+  }
+});
+
 test("deep link waits for Play, unlocks audio before fetch, and ignores duplicate clicks", async () => {
   const page = app("?game=hangar", { delayedAudio: true });
   page.manifest(); await tick();
@@ -159,7 +269,9 @@ test("deep link waits for Play, unlocks audio before fetch, and ignores duplicat
   page.instances[0]._frameTimer.onGenerateFrame();
   assert.equal(page.frames(), 0);
   page.rom(1, "HANGAR"); await tick();
-  assert.equal(page.instances[0].loads.length, 0);
+  assert.deepEqual(page.instances[0].loads, ["HANGAR"]);
+  assert.equal(page.instances[0].audioStarts, 1);
+  assert.match(page.elements.get("status").textContent, /^Playing Hangar/);
   page.audio.resolve(); await tick();
   assert.deepEqual(page.instances[0].loads, ["HANGAR"]);
   assert.equal(page.instances[0].audioStarts, 1);
